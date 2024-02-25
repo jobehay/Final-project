@@ -2,7 +2,7 @@
 ## Welcome to my final project "CommuniVoice"
 
 ## To run the program follow these steps :
-1. Install Node.js and npm.
+1. Install Node.js >= 18.0 and npm.
 2. Open cmd in relevant path.
 3. Type "npx expo start".
 readme-preview
