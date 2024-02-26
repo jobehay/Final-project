@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { containerRTLStyles } from "../../AppStyles";
 import { FONT_SIZE } from "../../AppStyles";
 import i18n from "i18next";
+import 'intl-pluralrules';
 
 import en from "../../assets/locales/en.json";
 import ar from "../../assets/locales/ar.json";
@@ -64,7 +65,7 @@ const ChangeLanguage = () => {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: "10%",
+    marginTop: "0%",
   },
   label: {
     margin: "5%",
