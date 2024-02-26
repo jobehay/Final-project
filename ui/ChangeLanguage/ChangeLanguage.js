@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { containerRTLStyles } from "../../AppStyles";
 import { FONT_SIZE } from "../../AppStyles";
 import i18n from "i18next";
-import 'intl-pluralrules';
+import "intl-pluralrules";
 
 import en from "../../assets/locales/en.json";
 import ar from "../../assets/locales/ar.json";
@@ -27,7 +27,7 @@ i18n.use(initReactI18next).init({
 
 const ChangeLanguage = () => {
   const { t } = useTranslation();
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
