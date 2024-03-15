@@ -31,7 +31,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "flex-end",
-    justifyContent: "right",
     backgroundColor: COLORS.white,
   },
   headerActions: {

@@ -1,5 +1,5 @@
 import { View, StyleSheet } from "react-native";
-import ChangeLanguage from "../ChangeLanguage/ChangeLanguage";
+import ChangeLanguage from "../ChangeLanguages/ChangeLanguages";
 import { COLORS } from "../../AppStyles";
 
 const SettingsScreen = () => {

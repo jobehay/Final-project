@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Text } from "react-native";
+import { View, StyleSheet, Text, ViewStyle } from "react-native";
 import Button from "../Atom/Button/Button";
 import { initReactI18next } from "react-i18next";
 import { useTranslation } from "react-i18next";
@@ -36,7 +36,7 @@ const ChangeLanguage = () => {
 
   return (
     <View
-      style={[styles.container, i18n.dir() === "rtl" && containerRTLStyles]}
+      style={[styles.container, i18n.dir() === "rtl" && containerRTLStyles as ViewStyle]}
     >
       <Text style={styles.label}> {t("screen.settings.languages")}</Text>
       <View style={styles.buttonsContainer}>

@@ -1,7 +1,7 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import HomeScreen from "./UI/Screens/HomeScreen";
-import SettingsScreen from "./UI/Screens/SettingsScreen";
+import HomeScreen from "./Components/Screens/HomeScreen";
+import SettingsScreen from "./Components/Screens/SettingsScreen";
 import { SCREENS } from "./constants";
 import { useTranslation } from "react-i18next";
 import { FONT_SIZE } from "./AppStyles";
