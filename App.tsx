@@ -5,10 +5,17 @@ import SettingsScreen from "./Components/Screens/SettingsScreen";
 import { SCREENS } from "./constants";
 import { useTranslation } from "react-i18next";
 import { FONT_SIZE } from "./AppStyles";
+import React, { useEffect } from "react";
+import { testFirestoreConnection } from "./configs/firebase";
 const Stack = createStackNavigator();
 
 const App = () => {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    testFirestoreConnection();
+  }, []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName={SCREENS.HOME}>
