@@ -15,7 +15,8 @@ readme-preview
 1. Create a new file named .env.local in the root directory of your React Native project.
 2. Copy and paste the following configuration into the .env.local file:
 
-```REACT_APP_FIREBASE_API_KEY=<YOUR_API_KEY>
+```
+REACT_APP_FIREBASE_API_KEY=<YOUR_API_KEY>
 REACT_APP_FIREBASE_AUTH_DOMAIN=<YOUR_AUTH_DOMAIN>
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=<YOUR_MESSAGING_SENDER_ID>
 IOS_REACT_APP_FIREBASE_APP_ID=<YOUR_IOS_APP_ID>
