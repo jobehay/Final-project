@@ -5,15 +5,24 @@ import SettingsScreen from "./Components/Screens/SettingsScreen";
 import { SCREENS } from "./constants";
 import { useTranslation } from "react-i18next";
 import { FONT_SIZE } from "./AppStyles";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { testFirestoreConnection } from "./configs/firebase";
+import { getCurrentUserOrCreateUser } from "./Services/Firebase/User/UserServices";
 const Stack = createStackNavigator();
 
 const App = () => {
   const { t } = useTranslation();
-
+  const [userDetails, setUserDetails] = useState();
   useEffect(() => {
     testFirestoreConnection();
+
+    const fetchData = async () => {
+      const currentUser = await getCurrentUserOrCreateUser();
+
+      setUserDetails(currentUser);
+    };
+
+    fetchData();
   }, []);
 
   return (

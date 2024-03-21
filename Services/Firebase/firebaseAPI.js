@@ -58,3 +58,27 @@ export const deleteDocument = async (collectionName, docId) => {
 export const isCollectionEmpty = (querySnapshot) => {
   return querySnapshot.length;
 };
+
+export const findDocument = async (
+  collectionName,
+  propertyName,
+  propertyValue
+) => {
+  try {
+    const querySnapshot = await getDocs(collection(fireDB, collectionName));
+    let foundDocument = null;
+    querySnapshot.forEach((doc) => {
+      const documentData = doc.data();
+      if (
+        documentData.hasOwnProperty(propertyName) &&
+        documentData[propertyName] === propertyValue
+      ) {
+        foundDocument = { id: doc.id, ...documentData };
+      }
+    });
+    return foundDocument;
+  } catch (error) {
+    console.error("Error finding document: ", error);
+    return null;
+  }
+};
