@@ -24,8 +24,8 @@ export const getCurrentUserOrCreateUser = async () => {
     console.log("Current user :", currentUser);
     if (!currentUser) {
       const newUser = await createDocument(MyCollections.USERS, defaultUser);
-      currentUser = newUser;
       console.log("Create a new user", newUser);
+      return newUser;
     }
 
     return currentUser;
