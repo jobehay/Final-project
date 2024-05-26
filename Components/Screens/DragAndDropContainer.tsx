@@ -6,6 +6,8 @@ import { COLORS, iconSize } from "../../AppStyles";
 import Icon from "react-native-vector-icons/FontAwesome";
 
 import { ICONS_NAMES } from "../../constants";
+import { useTranslation } from "react-i18next";
+import useSpeak from "../../hook/useSpeek";
 
 const gestureRootViewStyle = { flex: 1 };
 
@@ -63,6 +65,9 @@ const defaultFirstReceivingItemList = [
 ];
 
 const DragAndDropContainer = () => {
+  const { t } = useTranslation();
+  const speak = useSpeak();
+
   const [receivingItemList, setReceivedItemList] = React.useState(
     defaultFirstReceivingItemList
   );
@@ -161,7 +166,18 @@ const DragAndDropContainer = () => {
     setOriginalPositions([]);
   };
 
-  const onClickSpeechHandler = () => {};
+  const buildSentance = () => {
+    let words: string[] = [];
+    receivingItemList.map((itemSelected) => {
+      const { name } = itemSelected;
+      words.push(name);
+    });
+    return words.join(" ");
+  };
+  const onClickSpeechHandler = () => {
+    const sentatnce = buildSentance();
+    speak(sentatnce);
+  };
 
   return (
     <GestureHandlerRootView style={gestureRootViewStyle}>
