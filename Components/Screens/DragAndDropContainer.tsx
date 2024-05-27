@@ -8,77 +8,45 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import { ICONS_NAMES } from "../../constants";
 import { useTranslation } from "react-i18next";
 import useSpeak from "../../hook/useSpeek";
+import { MyCollections } from "../../Services/Firebase/collectionNames";
+import { readDocuments } from "../../Services/Firebase/firebaseAPI";
+import {
+  createDefaultFirstReceivingItemList,
+  createFavoriteImageObj,
+  getNameByLang,
+} from "../../Services/Firebase/Image/ImageServices";
+import { CARDS_NUMBERS } from "../../Services/Firebase/Image/consts";
 
 const gestureRootViewStyle = { flex: 1 };
 
-export const dragImages = [
-  {
-    id: 1,
-    name: "I",
-
-    image: require("../../assets/dragdrop/person.png"),
-    background_color: COLORS.white,
-  },
-  {
-    id: 3,
-    name: "I want to eat",
-    image: require("../../assets/dragdrop/iwonttoeat.png"),
-    background_color: COLORS.white,
-  },
-  {
-    id: 2,
-    name: "Apple",
-    image: require("../../assets/dragdrop/apple.png"),
-    background_color: COLORS.white,
-  },
-  {
-    id: 4,
-    name: "i want ",
-    image: require("../../assets/dragdrop/iwont.png"),
-    background_color: COLORS.white,
-  },
-  {
-    id: 5,
-    name: "mom",
-    image: require("../../assets/dragdrop/mom.png"),
-    background_color: COLORS.white,
-  },
-  {
-    id: 6,
-    name: "I want to go",
-    image: require("../../assets/dragdrop/iwonttogo.png"),
-    background_color: COLORS.white,
-  },
-  {
-    id: 7,
-    name: "house",
-    image: require("../../assets/dragdrop/house.png"),
-    background_color: COLORS.white,
-  },
-];
-
-const defaultFirstReceivingItemList = [
-  { id: 1, name: "", image: "", background_color: COLORS.grey },
-  { id: 2, name: "", image: "", background_color: COLORS.grey },
-  { id: 3, name: "", image: "", background_color: COLORS.grey },
-  { id: 4, name: "", image: "", background_color: COLORS.grey },
-];
-
 const DragAndDropContainer = () => {
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language },
+  } = useTranslation();
   const speak = useSpeak();
 
   const [receivingItemList, setReceivedItemList] = React.useState(
-    defaultFirstReceivingItemList
+    createDefaultFirstReceivingItemList(CARDS_NUMBERS)
   );
 
-  const [dragItemMiddleList, setDragItemListMiddle] =
-    React.useState(dragImages);
+  const [dragItemMiddleList, setDragItemListMiddle] = React.useState<any>();
+  const fetchFavoriteIamges = async () => {
+    const favoriteImages = await readDocuments(MyCollections.FAVORITE_IMAGES);
+    favoriteImages.map((image, idx) => createFavoriteImageObj(idx, image));
+    setDragItemListMiddle(favoriteImages);
+  };
+
+  React.useEffect(() => {
+    fetchFavoriteIamges();
+  }, []);
+
   const [originalPositions, setOriginalPositions] = React.useState([]);
 
   const [itemDroppedInside, setItemDroppedInside] = React.useState(false);
 
   const DragUIComponent = ({ item, index }) => {
+    const itemName = getNameByLang(item, language);
     return (
       <DraxView
         style={[
@@ -103,14 +71,16 @@ const DragAndDropContainer = () => {
           setItemDroppedInside(false); // Reset the flag
         }}
       >
-        <Image source={item.image} style={styles.image} />
-        <Text style={styles.subText}>{item.name}</Text>
+        <Image source={{ uri: item.image }} style={styles.image} />
+        <Text style={styles.subText}>{itemName}</Text>
       </DraxView>
     );
   };
 
   const ReceivingZoneUIComponent = ({ item, index }) => {
-    const isEmptySlot = !item.name && !item.image;
+    const itemName = getNameByLang(item, language);
+
+    const isEmptySlot = !itemName && !item.image;
 
     return (
       <DraxView
@@ -125,8 +95,8 @@ const DragAndDropContainer = () => {
           const payload = receivingDrag && receivingDrag.payload;
           return (
             <View>
-              <Image source={item.image} style={styles.image} />
-              <Text style={styles.subText}>{item.name}</Text>
+              <Image source={{ uri: item.image }} style={styles.image} />
+              <Text style={styles.subText}>{itemName}</Text>
             </View>
           );
         }}
@@ -137,11 +107,8 @@ const DragAndDropContainer = () => {
           const newDragItemMiddleList = dragItemMiddleList.filter(
             (_, index) => index !== draggedIndex
           );
-
-          if (
-            !newReceivingItemList[index].name &&
-            !newReceivingItemList[index].image
-          ) {
+          const name = getNameByLang(newReceivingItemList[index], language);
+          if (!name && !newReceivingItemList[index].image) {
             // If the slot is empty, allow dropping the dragged item
             newReceivingItemList[index] = dragItemMiddleList[draggedIndex];
             setReceivedItemList(newReceivingItemList);
@@ -159,17 +126,19 @@ const DragAndDropContainer = () => {
     return <View style={styles.itemSeparator} />;
   };
 
-  const onClickResetHandler = () => {
+  const onClickResetHandler = async () => {
     // Resetting the state variables directly
-    setReceivedItemList([...defaultFirstReceivingItemList]);
-    setDragItemListMiddle([...dragImages]);
+    await fetchFavoriteIamges();
+    setReceivedItemList([
+      ...createDefaultFirstReceivingItemList(CARDS_NUMBERS),
+    ]);
     setOriginalPositions([]);
   };
 
   const buildSentance = () => {
     let words: string[] = [];
     receivingItemList.map((itemSelected) => {
-      const { name } = itemSelected;
+      const name = getNameByLang(itemSelected, language);
       words.push(name);
     });
     return words.join(" ");
@@ -290,7 +259,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     alignItems: "center",
-
+    resizeMode: "cover",
     // borderRadius: 10, // Adjust border radius as needed
     marginBottom: 5, // Adjust margin as needed
     // borderWidth: 2,
