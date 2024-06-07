@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,13 @@ import {
   Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import {
+  createDocument,
+  deleteDocument,
+  readDocuments,
+  updateDocument,
+} from "../../Services/Firebase/firebaseAPI";
+import { MyCollections } from "../../Services/Firebase/collectionNames";
 
 // Example images for demonstration purposes
 const defaultImages = [
@@ -37,50 +44,57 @@ const defaultImages = [
 ];
 
 const CategoryManager = () => {
-  const [categories, setCategories] = useState([
-    {
-      id: "1",
-      name: "Person",
-      images: [
-        { ...defaultImages[0], editing: false },
-        { ...defaultImages[1], editing: false },
-      ],
-      editing: false,
-    },
-    {
-      id: "2",
-      name: "Food",
-      images: [
-        { ...defaultImages[2], editing: false },
-        { ...defaultImages[3], editing: false },
-      ],
-      editing: false,
-    },
-  ]);
-
+  const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newItemModalVisible, setNewItemModalVisible] = useState(false);
   const [newItemCategoryId, setNewItemCategoryId] = useState(null);
   const [newItemName, setNewItemName] = useState("");
+  const [editingCategoryNames, setEditingCategoryNames] = useState({});
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const categoriesFromFirebase = await readDocuments(
+        MyCollections.CATEGORIES
+      );
+      setCategories(
+        categoriesFromFirebase.map((category: any) => ({
+          id: category.id,
+          name: category.name,
+          images: [], // You may want to fetch and include images if stored in Firebase
+          editing: false,
+        }))
+      );
+    };
+    fetchCategories();
+  }, []);
 
   // Function to add a new, empty category
-  const addCategory = () => {
+  const addCategory = async () => {
     if (newCategoryName.trim() === "") return;
-    const newId = (categories.length + 1).toString();
-    setCategories([
-      ...categories,
-      {
-        id: newId,
-        name: newCategoryName,
-        images: [], // Empty array for images
-        editing: false,
-      },
-    ]);
-    setNewCategoryName("");
+
+    // Create the new category in Firebase
+    const newCategoryId = await createDocument(MyCollections.CATEGORIES, {
+      name: newCategoryName,
+    });
+
+    if (newCategoryId) {
+      // Update the local state
+      setCategories([
+        ...categories,
+        {
+          id: newCategoryId,
+          name: newCategoryName,
+          images: [], // Empty array for images
+          editing: false,
+        },
+      ]);
+      setNewCategoryName("");
+    }
   };
 
   // Function to delete a category by ID
-  const deleteCategory = (id) => {
+  const deleteCategory = async (id) => {
+    await deleteDocument(MyCollections.CATEGORIES, id);
     setCategories(categories.filter((category) => category.id !== id));
   };
 
@@ -95,15 +109,23 @@ const CategoryManager = () => {
     );
   };
 
-  // Update the name of a specific category
-  const updateCategoryName = (id, newName) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === id
-          ? { ...category, name: newName, editing: false }
-          : category
-      )
-    );
+  // Handle category name change with debouncing
+  const handleCategoryNameChange = (id, newName) => {
+    setEditingCategoryNames({ ...editingCategoryNames, [id]: newName });
+
+    // Debounce the update call
+    if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
+
+    this.debounceTimeout = setTimeout(async () => {
+      await updateDocument(MyCollections.CATEGORIES, id, { name: newName });
+      setCategories(
+        categories.map((category) =>
+          category.id === id
+            ? { ...category, name: newName, editing: false }
+            : category
+        )
+      );
+    }, 500); // 500ms debounce
   };
 
   // Open modal for new item addition
@@ -183,19 +205,46 @@ const CategoryManager = () => {
   };
 
   // Toggle star status for an image within a category
-  const toggleStar = (categoryId, index) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === categoryId
-          ? {
-              ...category,
-              images: category.images.map((img, i) =>
-                i === index ? { ...img, starred: !img.starred } : img
-              ),
-            }
-          : category
-      )
-    );
+  const toggleStar = async (categoryId, index) => {
+    // const selectedCategory = categories.filter(
+    //   (category) => Number(category.id) === Number(categoryId)
+    // );
+    // const selectedImage = selectedCategory[0].images.map((image, idx) => {
+    //   if (index === idx) {
+    //     return image;
+    //   }
+    // })[0];
+    // const favoriteImages = await readDocuments(MyCollections.FAVORITE_IMAGES);
+    // const imageee =
+    //   "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664";
+    // const favoriteImage = favoriteImages.filter((img) => img.image === imageee); //selectedImage.name
+    // if (favoriteImage.length) {
+    //   const favoriteImage = favoriteImages.filter(
+    //     (img) => img.image === imageee
+    //   )[0];
+    //   const docId = favoriteImage.id;
+    //   await deleteDocument(MyCollections.FAVORITE_IMAGES, docId);
+    // } else {
+    //   await createDocument(MyCollections.FAVORITE_IMAGES, {
+    //     name_en: selectedImage.name,
+    //     name_ar: selectedImage.name,
+    //     name_he: selectedImage.name,
+    //     image:
+    //       "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664",
+    //   });
+    // }
+    // setCategories(
+    //   categories.map((category) =>
+    //     category.id === categoryId
+    //       ? {
+    //           ...category,
+    //           images: category.images.map((img, i) =>
+    //             i === index ? { ...img, starred: !img.starred } : img
+    //           ),
+    //         }
+    //       : category
+    //   )
+    // );
   };
 
   return (
@@ -210,9 +259,9 @@ const CategoryManager = () => {
               {item.editing ? (
                 <TextInput
                   style={styles.categoryTitleInput}
-                  value={item.name}
+                  value={editingCategoryNames[item.id] || item.name}
                   onChangeText={(newName) =>
-                    updateCategoryName(item.id, newName)
+                    handleCategoryNameChange(item.id, newName)
                   }
                 />
               ) : (
