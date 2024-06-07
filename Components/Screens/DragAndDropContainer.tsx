@@ -32,9 +32,10 @@ const DragAndDropContainer = () => {
 
   const [dragItemMiddleList, setDragItemListMiddle] = React.useState<any>();
   const fetchFavoriteIamges = async () => {
-    const favoriteImages = await readDocuments(MyCollections.FAVORITE_IMAGES);
-    favoriteImages.map((image, idx) => createFavoriteImageObj(idx, image));
-    setDragItemListMiddle(favoriteImages);
+    const items = await readDocuments(MyCollections.ITEMS);
+    const starItems = items.filter((item: any) => item.isStar);
+    starItems.map((item, idx) => createFavoriteImageObj(idx, item));
+    setDragItemListMiddle(starItems);
   };
 
   React.useEffect(() => {

@@ -19,30 +19,6 @@ import {
 } from "../../Services/Firebase/firebaseAPI";
 import { MyCollections } from "../../Services/Firebase/collectionNames";
 
-// Example images for demonstration purposes
-const defaultImages = [
-  {
-    src: require("../../assets/dragdrop/person.png"),
-    name: "I",
-    starred: false,
-  },
-  {
-    src: require("../../assets/dragdrop/mom.png"),
-    name: "mom",
-    starred: false,
-  },
-  {
-    src: require("../../assets/dragdrop/apple.png"),
-    name: "Apple",
-    starred: false,
-  },
-  {
-    src: require("../../assets/dragdrop/iwonttoeat.png"),
-    name: "I Want to Eat",
-    starred: false,
-  },
-];
-
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -56,11 +32,13 @@ const CategoryManager = () => {
       const categoriesFromFirebase = await readDocuments(
         MyCollections.CATEGORIES
       );
+
+      const items = await readDocuments(MyCollections.ITEMS);
       setCategories(
         categoriesFromFirebase.map((category: any) => ({
           id: category.id,
           name: category.name,
-          images: [], // You may want to fetch and include images if stored in Firebase
+          images: items.filter((item: any) => item.categoryId === category.id), // You may want to fetch and include images if stored in Firebase
           editing: false,
         }))
       );
@@ -142,6 +120,7 @@ const CategoryManager = () => {
       image:
         "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664",
       categoryId: newItemCategoryId,
+      isStar: false,
     });
     setCategories(
       categories.map((category) =>
@@ -221,46 +200,32 @@ const CategoryManager = () => {
   };
 
   // Toggle star status for an image within a category
-  const toggleStar = async (categoryId, index) => {
-    // const selectedCategory = categories.filter(
-    //   (category) => Number(category.id) === Number(categoryId)
-    // );
-    // const selectedImage = selectedCategory[0].images.map((image, idx) => {
-    //   if (index === idx) {
-    //     return image;
-    //   }
-    // })[0];
-    // const favoriteImages = await readDocuments(MyCollections.FAVORITE_IMAGES);
-    // const imageee =
-    //   "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664";
-    // const favoriteImage = favoriteImages.filter((img) => img.image === imageee); //selectedImage.name
-    // if (favoriteImage.length) {
-    //   const favoriteImage = favoriteImages.filter(
-    //     (img) => img.image === imageee
-    //   )[0];
-    //   const docId = favoriteImage.id;
-    //   await deleteDocument(MyCollections.FAVORITE_IMAGES, docId);
-    // } else {
-    //   await createDocument(MyCollections.FAVORITE_IMAGES, {
-    //     name_en: selectedImage.name,
-    //     name_ar: selectedImage.name,
-    //     name_he: selectedImage.name,
-    //     image:
-    //       "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664",
-    //   });
-    // }
-    // setCategories(
-    //   categories.map((category) =>
-    //     category.id === categoryId
-    //       ? {
-    //           ...category,
-    //           images: category.images.map((img, i) =>
-    //             i === index ? { ...img, starred: !img.starred } : img
-    //           ),
-    //         }
-    //       : category
-    //   )
-    // );
+  const toggleStar = async (categoryId, index, item) => {
+    const { name } = item;
+    const items = await readDocuments(MyCollections.ITEMS);
+    const itemByCategoryId = items.filter(
+      (item: any) => item.categoryId === String(categoryId)
+    );
+    const itemFromFireBase = itemByCategoryId.filter(
+      (item: any) => item.name === name
+    )[0];
+    const { id, isStar } = itemFromFireBase;
+    await updateDocument(MyCollections.ITEMS, id, {
+      isStar: !isStar,
+    });
+
+    setCategories(
+      categories.map((category) =>
+        category.id === categoryId
+          ? {
+              ...category,
+              images: category.images.map((img, i) =>
+                i === index ? { ...img, starred: !img.starred } : img
+              ),
+            }
+          : category
+      )
+    );
   };
 
   return (
@@ -340,7 +305,7 @@ const CategoryManager = () => {
                     </TouchableOpacity>
                     {/* Star Icon */}
                     <TouchableOpacity
-                      onPress={() => toggleStar(item.id, index)}
+                      onPress={() => toggleStar(item.id, index, img)}
                     >
                       <Icon
                         name={img.starred ? "star" : "star-o"}

@@ -7,6 +7,7 @@ export const createFavoriteImageObj = (idx, favoriteImage) => {
     name_ar: favoriteImage.name_ar,
     name_en: favoriteImage.name_en,
     name_he: favoriteImage.name_he,
+    name: favoriteImage.name,
     background_color: COLORS.white,
   };
 };
@@ -17,6 +18,7 @@ export const createDefaultCard = (idx) => {
     name_ar: "",
     name_en: "",
     name_he: "",
+    name: "",
     background_color: COLORS.grey,
   };
 };
@@ -30,5 +32,5 @@ export const createDefaultFirstReceivingItemList = (numberCards) => {
 };
 
 export const getNameByLang = (image, language) => {
-  return image[languageMapping[language]];
+  return image[languageMapping[language]] || image.name;
 };
