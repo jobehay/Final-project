@@ -3,4 +3,5 @@ export const MyCollections = {
   USERS: "users",
   CATEGORIES: "categories",
   FAVORITE_IMAGES: "favoriteImages",
+  ITEMS: "items",
 };

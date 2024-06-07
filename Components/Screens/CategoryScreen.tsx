@@ -136,7 +136,13 @@ const CategoryManager = () => {
   };
 
   // Function to add a new item to a specific category
-  const addItemToCategory = () => {
+  const addItemToCategory = async () => {
+    await createDocument(MyCollections.ITEMS, {
+      name: newItemName,
+      image:
+        "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664",
+      categoryId: newItemCategoryId,
+    });
     setCategories(
       categories.map((category) =>
         category.id === newItemCategoryId
@@ -191,7 +197,17 @@ const CategoryManager = () => {
   };
 
   // Delete a specific image from a category
-  const deleteImage = (categoryId, index) => {
+  const deleteItem = async (categoryId, index, item) => {
+    const { name } = item;
+    const items = await readDocuments(MyCollections.ITEMS);
+    const itemByCategoryId = items.filter(
+      (item: any) => item.categoryId === String(categoryId)
+    );
+    const itemId = itemByCategoryId.filter((item: any) => item.name === name)[0]
+      .id;
+
+    await deleteDocument(MyCollections.ITEMS, itemId);
+
     setCategories(
       categories.map((category) =>
         category.id === categoryId
@@ -313,7 +329,7 @@ const CategoryManager = () => {
                       />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => deleteImage(item.id, index)}
+                      onPress={() => deleteItem(item.id, index, img)}
                     >
                       <Icon
                         name="trash"
