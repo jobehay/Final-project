@@ -11,6 +11,8 @@ import {
   Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import { COLORS } from "../../AppStyles";
+
 import {
   createDocument,
   deleteDocument,
@@ -27,6 +29,13 @@ const CategoryManager = () => {
   const [newItemName, setNewItemName] = useState("");
   const [editingCategoryNames, setEditingCategoryNames] = useState({});
 
+  const protectedCategoryIds = [
+    "Edspm4Kbx1huAiSCjG8L",
+    "U8NVNaLzdVncknDG8D5B",
+    "a8cfGdsLX3o6PVmy4M3d",
+    "cnnblVZbdse2ZqUSdvqt",
+  ];
+
   useEffect(() => {
     const fetchCategories = async () => {
       const categoriesFromFirebase = await readDocuments(
@@ -38,7 +47,7 @@ const CategoryManager = () => {
         categoriesFromFirebase.map((category: any) => ({
           id: category.id,
           name: category.name,
-          images: items.filter((item: any) => item.categoryId === category.id), // You may want to fetch and include images if stored in Firebase
+          images: items.filter((item: any) => item.categoryId === category.id),
           editing: false,
         }))
       );
@@ -72,12 +81,16 @@ const CategoryManager = () => {
 
   // Function to delete a category by ID
   const deleteCategory = async (id) => {
+    if (protectedCategoryIds.includes(id)) return;
+
     await deleteDocument(MyCollections.CATEGORIES, id);
     setCategories(categories.filter((category) => category.id !== id));
   };
 
   // Toggle editing mode for a category title
   const toggleCategoryEditing = (id) => {
+    if (protectedCategoryIds.includes(id)) return;
+
     setCategories(
       categories.map((category) =>
         category.id === id
@@ -89,6 +102,8 @@ const CategoryManager = () => {
 
   // Handle category name change with debouncing
   const handleCategoryNameChange = (id, newName) => {
+    if (protectedCategoryIds.includes(id)) return;
+
     setEditingCategoryNames({ ...editingCategoryNames, [id]: newName });
 
     // Debounce the update call
@@ -133,7 +148,7 @@ const CategoryManager = () => {
                   src: require("../../assets/dragdrop/person.png"),
                   name: newItemName,
                   editing: false,
-                  starred: false,
+                  isStar: false,
                 },
               ],
             }
@@ -202,7 +217,7 @@ const CategoryManager = () => {
   // Toggle star status for an image within a category
   const toggleStar = async (categoryId, index, item) => {
     const { name } = item;
-    const items = await readDocuments(MyCollections.ITEMS);
+    const items: any = await readDocuments(MyCollections.ITEMS);
     const itemByCategoryId = items.filter(
       (item: any) => item.categoryId === String(categoryId)
     );
@@ -220,14 +235,13 @@ const CategoryManager = () => {
           ? {
               ...category,
               images: category.images.map((img, i) =>
-                i === index ? { ...img, starred: !img.starred } : img
+                i === index ? { ...img, isStar: !img.isStar } : img
               ),
             }
           : category
       )
     );
   };
-
   return (
     <View style={styles.container}>
       <FlatList
@@ -248,18 +262,22 @@ const CategoryManager = () => {
               ) : (
                 <Text style={styles.categoryTitle}>{item.name}</Text>
               )}
-              <TouchableOpacity
-                onPress={() => toggleCategoryEditing(item.id)}
-                style={styles.categoryIconButton}
-              >
-                <Icon name={item.editing ? "save" : "edit"} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => deleteCategory(item.id)}
-                style={styles.categoryIconButton}
-              >
-                <Icon name="trash" size={20} color="red" />
-              </TouchableOpacity>
+              {!protectedCategoryIds.includes(item.id) && (
+                <>
+                  <TouchableOpacity
+                    onPress={() => toggleCategoryEditing(item.id)}
+                    style={styles.categoryIconButton}
+                  >
+                    <Icon name={item.editing ? "save" : "edit"} size={20} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => deleteCategory(item.id)}
+                    style={styles.categoryIconButton}
+                  >
+                    <Icon name="trash" size={20} color="red" />
+                  </TouchableOpacity>
+                </>
+              )}
               <TouchableOpacity
                 onPress={() => openNewItemModal(item.id)}
                 style={styles.categoryIconButton}
@@ -271,7 +289,7 @@ const CategoryManager = () => {
             <ScrollView horizontal>
               {item.images.map((img, index) => (
                 <View key={index} style={styles.imageContainer}>
-                  <Image source={img.src} style={styles.image} />
+                  <Image source={{ uri: img.image }} style={styles.image} />
                   {img.editing ? (
                     <TextInput
                       style={styles.imageTextInput}
@@ -308,7 +326,7 @@ const CategoryManager = () => {
                       onPress={() => toggleStar(item.id, index, img)}
                     >
                       <Icon
-                        name={img.starred ? "star" : "star-o"}
+                        name={img.isStar ? "star" : "star-o"}
                         size={16}
                         color="gold"
                         style={styles.starButton}
@@ -349,7 +367,7 @@ const CategoryManager = () => {
       {/* Section for adding a new category */}
       <View style={styles.addCategoryContainer}>
         <TextInput
-          style={styles.input}
+          style={styles.newCategoryInput}
           value={newCategoryName}
           onChangeText={setNewCategoryName}
           placeholder="New category name"
@@ -425,26 +443,50 @@ const styles = StyleSheet.create({
   addCategoryContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 20, // Adjust this value as needed
   },
-  input: {
+  newCategoryInput: {
     flex: 1,
-    borderBottomWidth: 1,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
     marginRight: 10,
+    backgroundColor: "#f9f9f9",
+    fontSize: 16,
   },
   addCategoryButton: {
-    backgroundColor: "blue",
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonText: {
     color: "white",
-    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginBottom: 20,
+    width: "80%",
+    backgroundColor: "#f9f9f9",
+    fontSize: 16,
   },
   modalButton: {
     padding: 10,
@@ -453,7 +495,7 @@ const styles = StyleSheet.create({
     width: "80%",
   },
   addButton: {
-    backgroundColor: "blue",
+    backgroundColor: COLORS.primary,
   },
   cancelButton: {
     backgroundColor: "gray",
