@@ -8,7 +8,12 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { fireDB, storage } from "../../configs/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 
 // Function to create a document in a specified collection
 export const createDocument = async (collectionName, data) => {
@@ -109,5 +114,21 @@ export const uploadImage = async (uri, fileName) => {
   } catch (error) {
     console.error("Error uploading image: ", error);
     return null;
+  }
+};
+
+export const deleteImage = async (imageUrl) => {
+  try {
+    // Create a reference to the file to delete
+    const storageRef = ref(storage, imageUrl);
+
+    // Delete the file
+    await deleteObject(storageRef);
+
+    console.log("Image deleted successfully");
+    return true;
+  } catch (error) {
+    console.error("Error deleting image: ", error);
+    return false;
   }
 };
