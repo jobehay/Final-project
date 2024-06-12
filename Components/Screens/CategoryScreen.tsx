@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { COLORS } from "../../AppStyles";
@@ -64,8 +65,8 @@ const CategoryManager = () => {
           id: category.id,
           name: category.name,
           images: items
-            .filter((item: any) => item.categoryId === category.id)
-            .map((item: any) => ({
+            .filter((item) => item.categoryId === category.id)
+            .map((item) => ({
               ...item,
               src: { uri: item.image }, // Ensure the image source is set correctly
             })),
@@ -172,7 +173,7 @@ const CategoryManager = () => {
   };
 
   // Function to add a new item to a specific category
-  const addItemToCategory = async (item: any) => {
+  const addItemToCategory = async (item) => {
     const { image, name } = item;
     const newItem = {
       name: name,
@@ -235,17 +236,33 @@ const CategoryManager = () => {
 
   // Delete a specific image from a category
   const deleteItem = async (categoryId, index, item) => {
-    await deleteDocument(MyCollections.ITEMS, item.id);
-    await deleteImage(item.src.uri);
-    setCategories(
-      categories.map((category) =>
-        category.id === categoryId
-          ? {
-              ...category,
-              images: category.images.filter((_, i) => i !== index),
-            }
-          : category
-      )
+    Alert.alert(
+      "Confirm Deletion",
+      "Are you sure you want to delete this item?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteDocument(MyCollections.ITEMS, item.id);
+            await deleteImage(item.src.uri);
+            setCategories(
+              categories.map((category) =>
+                category.id === categoryId
+                  ? {
+                      ...category,
+                      images: category.images.filter((_, i) => i !== index),
+                    }
+                  : category
+              )
+            );
+          },
+        },
+      ]
     );
   };
 
