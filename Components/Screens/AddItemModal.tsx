@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { COLORS } from "../../AppStyles";
 import { pickImageAndUpload } from "../../Services/Firebase/Image/ImageServices";
@@ -24,15 +25,18 @@ const AddItemModal = ({
 }) => {
   const [imagePath, setImagePath] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setImagePath(null);
       setErrorMessage("");
+      setLoading(false);
     }
   }, [visible]);
 
   const handlePickImage = async () => {
+    if (loading) return;
     const imagePath = await pickImageAndUpload();
     console.log("Image path: ", imagePath);
     if (imagePath) {
@@ -46,15 +50,25 @@ const AddItemModal = ({
       return;
     }
 
-    const timestamp = Date.now();
-    const fileName = `${newItemName}_${timestamp}`;
-    console.log("Add item clicked with file name: ", fileName);
+    setLoading(true);
 
-    const imageUrl = await uploadImage(imagePath, fileName);
-    console.log("Image URL: ", imageUrl);
+    try {
+      const timestamp = Date.now();
+      const fileName = `${newItemName}_${timestamp}`;
+      console.log("Add item clicked with file name: ", fileName);
 
-    addItemToCategory({ name: newItemName, image: imageUrl });
-    setErrorMessage(""); // Clear error message after successful addition
+      const imageUrl = await uploadImage(imagePath, fileName);
+      console.log("Image URL: ", imageUrl);
+
+      addItemToCategory({ name: newItemName, image: imageUrl });
+      setErrorMessage(""); // Clear error message after successful addition
+      onClose(); // Close the modal after adding the item
+    } catch (error) {
+      setErrorMessage("Failed to add item. Please try again.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,18 +100,24 @@ const AddItemModal = ({
           {errorMessage ? (
             <Text style={styles.errorText}>{errorMessage}</Text>
           ) : null}
-          <TouchableOpacity
-            onPress={handleAddItem}
-            style={[styles.modalButton, styles.addButton]}
-          >
-            <Text style={styles.buttonText}>Add Item</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={onClose}
-            style={[styles.modalButton, styles.cancelButton]}
-          >
-            <Text style={styles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          ) : (
+            <>
+              <TouchableOpacity
+                onPress={handleAddItem}
+                style={[styles.modalButton, styles.addButton]}
+              >
+                <Text style={styles.buttonText}>Add Item</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={onClose}
+                style={[styles.modalButton, styles.cancelButton]}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
