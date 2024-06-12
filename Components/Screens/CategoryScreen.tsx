@@ -6,7 +6,6 @@ import {
   FlatList,
   Image,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -65,8 +64,8 @@ const CategoryManager = () => {
           id: category.id,
           name: category.name,
           images: items
-            .filter((item) => item.categoryId === category.id)
-            .map((item) => ({
+            .filter((item: any) => item.categoryId === category.id)
+            .map((item: any) => ({
               ...item,
               src: { uri: item.image }, // Ensure the image source is set correctly
             })),
@@ -307,133 +306,134 @@ const CategoryManager = () => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.contentContainer}>
-        {loading && (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+      {loading && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      )}
+      <FlatList
+        data={categories}
+        keyExtractor={(item) => item.id}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={
+          <View style={styles.addCategoryContainer}>
+            <TextInput
+              style={styles.newCategoryInput}
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+              placeholder="New category name"
+            />
+            <TouchableOpacity
+              onPress={addCategory}
+              style={styles.addCategoryButton}
+            >
+              <Text style={styles.buttonText}>Add Category</Text>
+            </TouchableOpacity>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.categoryContainer}>
+            <View style={styles.categoryTitleContainer}>
+              {item.editing ? (
+                <TextInput
+                  style={styles.categoryTitleInput}
+                  value={editingCategoryNames[item.id] || item.name}
+                  onChangeText={(newName) =>
+                    handleCategoryNameChange(item.id, newName)
+                  }
+                />
+              ) : (
+                <Text style={styles.categoryTitle}>{item.name}</Text>
+              )}
+              {!protectedCategoryIds.includes(item.id) && (
+                <>
+                  <TouchableOpacity
+                    onPress={() => toggleCategoryEditing(item.id)}
+                    style={styles.categoryIconButton}
+                  >
+                    <Icon name={item.editing ? "save" : "edit"} size={20} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => deleteCategory(item.id)}
+                    style={styles.categoryIconButton}
+                  >
+                    <Icon name="trash" size={20} color="red" />
+                  </TouchableOpacity>
+                </>
+              )}
+              <TouchableOpacity
+                onPress={() => openNewItemModal(item.id)}
+                style={styles.categoryIconButton}
+              >
+                <Icon name="plus" size={20} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              horizontal
+              data={item.images}
+              keyExtractor={(img) => img.id}
+              renderItem={({ item: img, index }) => (
+                <View style={styles.imageContainer}>
+                  <Image source={img.src} style={styles.image} />
+                  {img.editing ? (
+                    <TextInput
+                      style={styles.imageTextInput}
+                      value={img.name}
+                      onChangeText={(newName) =>
+                        updateImageName(item.id, index, newName)
+                      }
+                    />
+                  ) : (
+                    <Text style={styles.imageText}>{img.name}</Text>
+                  )}
+                  <View style={styles.iconContainer}>
+                    <TouchableOpacity
+                      onPress={() => toggleImageEditing(item.id, index)}
+                    >
+                      <Icon
+                        name={img.editing ? "save" : "edit"}
+                        size={16}
+                        style={styles.editButton}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => deleteItem(item.id, index, img)}
+                    >
+                      <Icon
+                        name="trash"
+                        size={16}
+                        color="red"
+                        style={styles.deleteButton}
+                      />
+                    </TouchableOpacity>
+                    {/* Star Icon */}
+                    <TouchableOpacity
+                      onPress={() => toggleStar(item.id, index, img)}
+                    >
+                      <Icon
+                        name={img.isStar ? "star" : "star-o"}
+                        size={16}
+                        color="gold"
+                        style={styles.starButton}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            />
           </View>
         )}
-        <View style={styles.addCategoryContainer}>
-          <TextInput
-            style={styles.newCategoryInput}
-            value={newCategoryName}
-            onChangeText={setNewCategoryName}
-            placeholder="New category name"
-          />
-          <TouchableOpacity
-            onPress={addCategory}
-            style={styles.addCategoryButton}
-          >
-            <Text style={styles.buttonText}>Add Category</Text>
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          data={categories}
-          keyExtractor={(item) => item.id}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({ item }) => (
-            <View style={styles.categoryContainer}>
-              <View style={styles.categoryTitleContainer}>
-                {item.editing ? (
-                  <TextInput
-                    style={styles.categoryTitleInput}
-                    value={editingCategoryNames[item.id] || item.name}
-                    onChangeText={(newName) =>
-                      handleCategoryNameChange(item.id, newName)
-                    }
-                  />
-                ) : (
-                  <Text style={styles.categoryTitle}>{item.name}</Text>
-                )}
-                {!protectedCategoryIds.includes(item.id) && (
-                  <>
-                    <TouchableOpacity
-                      onPress={() => toggleCategoryEditing(item.id)}
-                      style={styles.categoryIconButton}
-                    >
-                      <Icon name={item.editing ? "save" : "edit"} size={20} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => deleteCategory(item.id)}
-                      style={styles.categoryIconButton}
-                    >
-                      <Icon name="trash" size={20} color="red" />
-                    </TouchableOpacity>
-                  </>
-                )}
-                <TouchableOpacity
-                  onPress={() => openNewItemModal(item.id)}
-                  style={styles.categoryIconButton}
-                >
-                  <Icon name="plus" size={20} />
-                </TouchableOpacity>
-              </View>
+      />
 
-              <ScrollView horizontal>
-                {item.images.map((img, index) => (
-                  <View key={index} style={styles.imageContainer}>
-                    <Image source={img.src} style={styles.image} />
-                    {img.editing ? (
-                      <TextInput
-                        style={styles.imageTextInput}
-                        value={img.name}
-                        onChangeText={(newName) =>
-                          updateImageName(item.id, index, newName)
-                        }
-                      />
-                    ) : (
-                      <Text style={styles.imageText}>{img.name}</Text>
-                    )}
-                    <View style={styles.iconContainer}>
-                      <TouchableOpacity
-                        onPress={() => toggleImageEditing(item.id, index)}
-                      >
-                        <Icon
-                          name={img.editing ? "save" : "edit"}
-                          size={16}
-                          style={styles.editButton}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => deleteItem(item.id, index, img)}
-                      >
-                        <Icon
-                          name="trash"
-                          size={16}
-                          color="red"
-                          style={styles.deleteButton}
-                        />
-                      </TouchableOpacity>
-                      {/* Star Icon */}
-                      <TouchableOpacity
-                        onPress={() => toggleStar(item.id, index, img)}
-                      >
-                        <Icon
-                          name={img.isStar ? "star" : "star-o"}
-                          size={16}
-                          color="gold"
-                          style={styles.starButton}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        />
-
-        {/* Modal for Adding New Item */}
-        <AddItemModal
-          visible={newItemModalVisible}
-          onClose={() => setNewItemModalVisible(false)}
-          newItemName={newItemName}
-          setNewItemName={setNewItemName}
-          addItemToCategory={addItemToCategory}
-        />
-
-        {/* Section for adding a new category */}
-      </ScrollView>
+      {/* Modal for Adding New Item */}
+      <AddItemModal
+        visible={newItemModalVisible}
+        onClose={() => setNewItemModalVisible(false)}
+        newItemName={newItemName}
+        setNewItemName={setNewItemName}
+        addItemToCategory={addItemToCategory}
+      />
     </KeyboardAvoidingView>
   );
 };

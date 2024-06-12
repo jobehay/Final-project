@@ -4,12 +4,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { DraxProvider, DraxView, DraxList } from "react-native-drax";
 import { COLORS, iconSize } from "../../AppStyles";
 import Icon from "react-native-vector-icons/FontAwesome";
-
 import { ICONS_NAMES } from "../../constants";
 import { useTranslation } from "react-i18next";
 import useSpeak from "../../hook/useSpeek";
 import { MyCollections } from "../../Services/Firebase/collectionNames";
-import { readDocuments } from "../../Services/Firebase/firebaseAPI";
+import {
+  readDocumentsRealTime,
+  readDocuments,
+} from "../../Services/Firebase/firebaseAPI";
 import {
   createDefaultFirstReceivingItemList,
   createFavoriteImageObj,
@@ -29,22 +31,21 @@ const DragAndDropContainer = () => {
   const [receivingItemList, setReceivedItemList] = React.useState(
     createDefaultFirstReceivingItemList(CARDS_NUMBERS)
   );
-
-  const [dragItemMiddleList, setDragItemListMiddle] = React.useState<any>();
-  const fetchFavoriteIamges = async () => {
-    const items = await readDocuments(MyCollections.ITEMS);
-    const starItems = items.filter((item: any) => item.isStar);
-    starItems.map((item, idx) => createFavoriteImageObj(idx, item));
-    setDragItemListMiddle(starItems);
-  };
+  const [dragItemMiddleList, setDragItemListMiddle] = React.useState([]);
+  const [originalPositions, setOriginalPositions] = React.useState([]);
+  const [itemDroppedInside, setItemDroppedInside] = React.useState(false);
 
   React.useEffect(() => {
-    fetchFavoriteIamges();
+    const unsubscribe = readDocumentsRealTime(MyCollections.ITEMS, (items) => {
+      const starItems = items.filter((item) => item.isStar);
+      const favoriteImages = starItems.map((item, idx) =>
+        createFavoriteImageObj(idx, item)
+      );
+      setDragItemListMiddle(favoriteImages);
+    });
+
+    return () => unsubscribe();
   }, []);
-
-  const [originalPositions, setOriginalPositions] = React.useState([]);
-
-  const [itemDroppedInside, setItemDroppedInside] = React.useState(false);
 
   const DragUIComponent = ({ item, index }) => {
     const itemName = getNameByLang(item, language);
@@ -61,18 +62,18 @@ const DragAndDropContainer = () => {
         longPressDelay={150}
         key={index}
         onDragStart={() => {
-          // Store the original position of the dragged item
           setOriginalPositions([...dragItemMiddleList]);
         }}
-        onDragEnd={(event) => {
+        onDragEnd={() => {
           if (!itemDroppedInside) {
-            // Revert the movement if item was not dropped inside drop zone
             setDragItemListMiddle(originalPositions);
           }
-          setItemDroppedInside(false); // Reset the flag
+          setItemDroppedInside(false);
         }}
       >
-        <Image source={{ uri: item.image }} style={styles.image} />
+        {item?.image && (
+          <Image source={{ uri: item?.image }} style={styles.image} />
+        )}
         <Text style={styles.subText}>{itemName}</Text>
       </DraxView>
     );
@@ -80,13 +81,11 @@ const DragAndDropContainer = () => {
 
   const ReceivingZoneUIComponent = ({ item, index }) => {
     const itemName = getNameByLang(item, language);
-
     const isEmptySlot = !itemName && !item.image;
 
     return (
       <DraxView
         style={[
-          // styles.centeredContent,
           styles.receivingZone,
           { backgroundColor: item.background_color },
         ]}
@@ -96,7 +95,9 @@ const DragAndDropContainer = () => {
           const payload = receivingDrag && receivingDrag.payload;
           return (
             <View>
-              <Image source={{ uri: item.image }} style={styles.image} />
+              {item?.image && (
+                <Image source={{ uri: item?.image }} style={styles.image} />
+              )}
               <Text style={styles.subText}>{itemName}</Text>
             </View>
           );
@@ -106,16 +107,15 @@ const DragAndDropContainer = () => {
           const draggedIndex = event.dragged.payload;
           const newReceivingItemList = [...receivingItemList];
           const newDragItemMiddleList = dragItemMiddleList.filter(
-            (_, index) => index !== draggedIndex
+            (_, idx) => idx !== draggedIndex
           );
-          const name = getNameByLang(newReceivingItemList[index], language);
-          if (!name && !newReceivingItemList[index].image) {
-            // If the slot is empty, allow dropping the dragged item
+
+          if (isEmptySlot) {
             newReceivingItemList[index] = dragItemMiddleList[draggedIndex];
             setReceivedItemList(newReceivingItemList);
             setDragItemListMiddle(newDragItemMiddleList);
+            setItemDroppedInside(true);
           } else {
-            // Revert the movement if item was not dropped inside drop zone
             setDragItemListMiddle(originalPositions);
           }
         }}
@@ -128,25 +128,24 @@ const DragAndDropContainer = () => {
   };
 
   const onClickResetHandler = async () => {
-    // Resetting the state variables directly
-    await fetchFavoriteIamges();
-    setReceivedItemList([
-      ...createDefaultFirstReceivingItemList(CARDS_NUMBERS),
-    ]);
+    const items = await readDocuments(MyCollections.ITEMS);
+    const starItems = items.filter((item: any) => item.isStar);
+    const favoriteImages = starItems.map((item, idx) =>
+      createFavoriteImageObj(idx, item)
+    );
+    setDragItemListMiddle(favoriteImages);
+    setReceivedItemList(createDefaultFirstReceivingItemList(CARDS_NUMBERS));
     setOriginalPositions([]);
   };
 
-  const buildSentance = () => {
-    let words: string[] = [];
-    receivingItemList.map((itemSelected) => {
-      const name = getNameByLang(itemSelected, language);
-      words.push(name);
-    });
-    return words.join(" ");
+  const buildSentence = () => {
+    return receivingItemList
+      .map((item) => getNameByLang(item, language))
+      .join(" ");
   };
+
   const onClickSpeechHandler = () => {
-    const sentatnce = buildSentance();
-    speak(sentatnce);
+    speak(buildSentence());
   };
 
   return (
@@ -177,7 +176,6 @@ const DragAndDropContainer = () => {
               onPress={onClickSpeechHandler}
             />
           </View>
-
           <View style={styles.receivingContainer}>
             {receivingItemList.map((item, index) => (
               <ReceivingZoneUIComponent key={index} item={item} index={index} />
@@ -192,9 +190,6 @@ const DragAndDropContainer = () => {
 export default DragAndDropContainer;
 
 const styles = StyleSheet.create({
-  borderbook: {
-    borderBlockColor: "black",
-  },
   buttonsContainer: {
     width: "100%",
     flexDirection: "row",
@@ -206,7 +201,6 @@ const styles = StyleSheet.create({
   icon: {
     marginTop: 5,
   },
-
   receivingZone: {
     height: Dimensions.get("window").width / 4 - 12,
     borderRadius: 10,
@@ -250,7 +244,6 @@ const styles = StyleSheet.create({
   draxListContainer: {
     height: "70%",
     backgroundColor: COLORS.primary,
-    borderBlockColor: "red",
   },
   subText: {
     fontSize: 14,
@@ -261,9 +254,6 @@ const styles = StyleSheet.create({
     height: 60,
     alignItems: "center",
     resizeMode: "cover",
-    // borderRadius: 10, // Adjust border radius as needed
-    marginBottom: 5, // Adjust margin as needed
-    // borderWidth: 2,
-    // borderColor: COLORS.grey, // Border color with transparency
+    marginBottom: 5,
   },
 });
