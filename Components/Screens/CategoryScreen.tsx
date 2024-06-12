@@ -126,7 +126,15 @@ const CategoryManager = () => {
   // Function to delete a category by ID
   const deleteCategory = async (id) => {
     if (protectedCategoryIds.includes(id)) return;
+    const items = await readDocuments(MyCollections.ITEMS);
 
+    const itemsByCategoreyId = items.filter(
+      (item: any) => item.categoryId == id
+    );
+    itemsByCategoreyId.forEach(async (item: any) => {
+      await deleteDocument(MyCollections.ITEMS, item.id);
+      await deleteImage(item.image);
+    });
     await deleteDocument(MyCollections.CATEGORIES, id);
     setCategories(categories.filter((category) => category.id !== id));
   };
