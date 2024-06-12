@@ -272,7 +272,20 @@ const CategoryManager = () => {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       )}
-
+      <View style={styles.addCategoryContainer}>
+        <TextInput
+          style={styles.newCategoryInput}
+          value={newCategoryName}
+          onChangeText={setNewCategoryName}
+          placeholder="New category name"
+        />
+        <TouchableOpacity
+          onPress={addCategory}
+          style={styles.addCategoryButton}
+        >
+          <Text style={styles.buttonText}>Add Category</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
@@ -379,20 +392,6 @@ const CategoryManager = () => {
       />
 
       {/* Section for adding a new category */}
-      <View style={styles.addCategoryContainer}>
-        <TextInput
-          style={styles.newCategoryInput}
-          value={newCategoryName}
-          onChangeText={setNewCategoryName}
-          placeholder="New category name"
-        />
-        <TouchableOpacity
-          onPress={addCategory}
-          style={styles.addCategoryButton}
-        >
-          <Text style={styles.buttonText}>Add Category</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };

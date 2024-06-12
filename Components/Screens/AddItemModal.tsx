@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Text,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from "react-native";
 import { COLORS } from "../../AppStyles";
 import { pickImageAndUpload } from "../../Services/Firebase/Image/ImageServices";
@@ -39,7 +42,7 @@ const AddItemModal = ({
 
   const handleAddItem = async () => {
     if (!newItemName || !imagePath) {
-      setErrorMessage("Item image and name are requried");
+      setErrorMessage("Item image and name are required");
       return;
     }
 
@@ -56,42 +59,47 @@ const AddItemModal = ({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalContainer}>
-        <TouchableOpacity
-          onPress={handlePickImage}
-          style={styles.imageContainer}
-        >
-          <Image
-            source={
-              imagePath
-                ? { uri: imagePath }
-                : require("../../assets/default-image.png")
-            }
-            style={styles.image}
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView contentContainerStyle={styles.modalContent}>
+          <TouchableOpacity
+            onPress={handlePickImage}
+            style={styles.imageContainer}
+          >
+            <Image
+              source={
+                imagePath
+                  ? { uri: imagePath }
+                  : require("../../assets/default-image.png")
+              }
+              style={styles.image}
+            />
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={newItemName}
+            onChangeText={setNewItemName}
+            placeholder="New item name"
           />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.input}
-          value={newItemName}
-          onChangeText={setNewItemName}
-          placeholder="New item name"
-        />
-        {errorMessage ? (
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        ) : null}
-        <TouchableOpacity
-          onPress={handleAddItem}
-          style={[styles.modalButton, styles.addButton]}
-        >
-          <Text style={styles.buttonText}>Add Item</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onClose}
-          style={[styles.modalButton, styles.cancelButton]}
-        >
-          <Text style={styles.buttonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
+          <TouchableOpacity
+            onPress={handleAddItem}
+            style={[styles.modalButton, styles.addButton]}
+          >
+            <Text style={styles.buttonText}>Add Item</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onClose}
+            style={[styles.modalButton, styles.cancelButton]}
+          >
+            <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -99,6 +107,9 @@ const AddItemModal = ({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
+  },
+  modalContent: {
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
   },
