@@ -8,18 +8,19 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Modal,
+  ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { COLORS } from "../../AppStyles";
-
 import {
   createDocument,
   deleteDocument,
-  readDocuments,
+  readDocumentsRealTime,
   updateDocument,
+  readDocuments,
 } from "../../Services/Firebase/firebaseAPI";
 import { MyCollections } from "../../Services/Firebase/collectionNames";
+import AddItemModal from "./AddItemModal";
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
@@ -28,6 +29,7 @@ const CategoryManager = () => {
   const [newItemCategoryId, setNewItemCategoryId] = useState(null);
   const [newItemName, setNewItemName] = useState("");
   const [editingCategoryNames, setEditingCategoryNames] = useState({});
+  const [loading, setLoading] = useState(true);
 
   const protectedCategoryIds = [
     "Edspm4Kbx1huAiSCjG8L",
@@ -37,22 +39,62 @@ const CategoryManager = () => {
   ];
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const categoriesFromFirebase = await readDocuments(
-        MyCollections.CATEGORIES
-      );
+    setLoading(true); // Set loading to true before fetching data
 
-      const items = await readDocuments(MyCollections.ITEMS);
-      setCategories(
-        categoriesFromFirebase.map((category: any) => ({
+    const unsubscribeCategories = readDocumentsRealTime(
+      MyCollections.CATEGORIES,
+      async (categoriesFromFirebase) => {
+        const items = await readDocuments(MyCollections.ITEMS);
+
+        const protectedCategories = categoriesFromFirebase.filter((category) =>
+          protectedCategoryIds.includes(category.id)
+        );
+
+        const otherCategories = categoriesFromFirebase.filter(
+          (category) => !protectedCategoryIds.includes(category.id)
+        );
+
+        const sortedCategories = [
+          ...protectedCategories,
+          ...otherCategories,
+        ].map((category) => ({
           id: category.id,
           name: category.name,
-          images: items.filter((item: any) => item.categoryId === category.id),
+          images: items
+            .filter((item) => item.categoryId === category.id)
+            .map((item) => ({
+              ...item,
+              src: { uri: item.image }, // Ensure the image source is set correctly
+            })),
           editing: false,
-        }))
-      );
+        }));
+
+        setCategories(sortedCategories);
+        setLoading(false); // Set loading to false after data is fetched
+      }
+    );
+
+    const unsubscribeItems = readDocumentsRealTime(
+      MyCollections.ITEMS,
+      (itemsFromFirebase) => {
+        setCategories((prevCategories) =>
+          prevCategories.map((category) => ({
+            ...category,
+            images: itemsFromFirebase
+              .filter((item) => item.categoryId === category.id)
+              .map((item) => ({
+                ...item,
+                src: { uri: item.image },
+              })),
+          }))
+        );
+      }
+    );
+
+    return () => {
+      unsubscribeCategories();
+      unsubscribeItems();
     };
-    fetchCategories();
   }, []);
 
   // Function to add a new, empty category
@@ -66,15 +108,13 @@ const CategoryManager = () => {
 
     if (newCategoryId) {
       // Update the local state
-      setCategories([
-        ...categories,
-        {
-          id: newCategoryId,
-          name: newCategoryName,
-          images: [], // Empty array for images
-          editing: false,
-        },
-      ]);
+      const newCategory = {
+        id: newCategoryId,
+        name: newCategoryName,
+        images: [], // Empty array for images
+        editing: false,
+      };
+      setCategories([...categories, newCategory]);
       setNewCategoryName("");
     }
   };
@@ -130,13 +170,14 @@ const CategoryManager = () => {
 
   // Function to add a new item to a specific category
   const addItemToCategory = async () => {
-    await createDocument(MyCollections.ITEMS, {
+    const newItem = {
       name: newItemName,
       image:
         "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664",
       categoryId: newItemCategoryId,
       isStar: false,
-    });
+    };
+    const newItemId = await createDocument(MyCollections.ITEMS, newItem);
     setCategories(
       categories.map((category) =>
         category.id === newItemCategoryId
@@ -145,10 +186,9 @@ const CategoryManager = () => {
               images: [
                 ...category.images,
                 {
-                  src: require("../../assets/dragdrop/person.png"),
-                  name: newItemName,
-                  editing: false,
-                  isStar: false,
+                  ...newItem,
+                  id: newItemId,
+                  src: { uri: newItem.image },
                 },
               ],
             }
@@ -192,16 +232,7 @@ const CategoryManager = () => {
 
   // Delete a specific image from a category
   const deleteItem = async (categoryId, index, item) => {
-    const { name } = item;
-    const items = await readDocuments(MyCollections.ITEMS);
-    const itemByCategoryId = items.filter(
-      (item: any) => item.categoryId === String(categoryId)
-    );
-    const itemId = itemByCategoryId.filter((item: any) => item.name === name)[0]
-      .id;
-
-    await deleteDocument(MyCollections.ITEMS, itemId);
-
+    await deleteDocument(MyCollections.ITEMS, item.id);
     setCategories(
       categories.map((category) =>
         category.id === categoryId
@@ -216,34 +247,32 @@ const CategoryManager = () => {
 
   // Toggle star status for an image within a category
   const toggleStar = async (categoryId, index, item) => {
-    const { name } = item;
-    const items: any = await readDocuments(MyCollections.ITEMS);
-    const itemByCategoryId = items.filter(
-      (item: any) => item.categoryId === String(categoryId)
-    );
-    const itemFromFireBase = itemByCategoryId.filter(
-      (item: any) => item.name === name
-    )[0];
-    const { id, isStar } = itemFromFireBase;
-    await updateDocument(MyCollections.ITEMS, id, {
-      isStar: !isStar,
+    const updatedItem = { ...item, isStar: !item.isStar };
+    await updateDocument(MyCollections.ITEMS, item.id, {
+      isStar: updatedItem.isStar,
     });
-
     setCategories(
       categories.map((category) =>
         category.id === categoryId
           ? {
               ...category,
               images: category.images.map((img, i) =>
-                i === index ? { ...img, isStar: !img.isStar } : img
+                i === index ? updatedItem : img
               ),
             }
           : category
       )
     );
   };
+
   return (
     <View style={styles.container}>
+      {loading && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      )}
+
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
@@ -289,7 +318,7 @@ const CategoryManager = () => {
             <ScrollView horizontal>
               {item.images.map((img, index) => (
                 <View key={index} style={styles.imageContainer}>
-                  <Image source={{ uri: img.image }} style={styles.image} />
+                  <Image source={img.src} style={styles.image} />
                   {img.editing ? (
                     <TextInput
                       style={styles.imageTextInput}
@@ -341,28 +370,13 @@ const CategoryManager = () => {
       />
 
       {/* Modal for Adding New Item */}
-      <Modal visible={newItemModalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <TextInput
-            style={styles.input}
-            value={newItemName}
-            onChangeText={setNewItemName}
-            placeholder="New item name"
-          />
-          <TouchableOpacity
-            onPress={addItemToCategory}
-            style={[styles.modalButton, styles.addButton]}
-          >
-            <Text style={styles.buttonText}>Add Item</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setNewItemModalVisible(false)}
-            style={[styles.modalButton, styles.cancelButton]}
-          >
-            <Text style={styles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <AddItemModal
+        visible={newItemModalVisible}
+        onClose={() => setNewItemModalVisible(false)}
+        newItemName={newItemName}
+        setNewItemName={setNewItemName}
+        addItemToCategory={addItemToCategory}
+      />
 
       {/* Section for adding a new category */}
       <View style={styles.addCategoryContainer}>
@@ -387,6 +401,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+  },
+  loaderContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.8)", // Adjust background color to your preference
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
   },
   separator: {
     height: 20,
@@ -471,34 +492,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginBottom: 20,
-    width: "80%",
-    backgroundColor: "#f9f9f9",
-    fontSize: 16,
-  },
-  modalButton: {
-    padding: 10,
-    borderRadius: 5,
-    margin: 10,
-    width: "80%",
-  },
-  addButton: {
-    backgroundColor: COLORS.primary,
-  },
-  cancelButton: {
-    backgroundColor: "gray",
   },
 });
 

@@ -5,6 +5,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { fireDB } from "../../configs/firebase";
 
@@ -55,8 +56,20 @@ export const deleteDocument = async (collectionName, docId) => {
   }
 };
 
+// Function to read documents in real-time
+export const readDocumentsRealTime = (collectionName, callback) => {
+  const collectionRef = collection(fireDB, collectionName);
+  return onSnapshot(collectionRef, (snapshot) => {
+    const docs = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(docs);
+  });
+};
+
 export const isCollectionEmpty = (querySnapshot) => {
-  return querySnapshot.length;
+  return querySnapshot.length === 0;
 };
 
 export const findDocument = async (
