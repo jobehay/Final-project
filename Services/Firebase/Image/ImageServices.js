@@ -1,5 +1,7 @@
 import { COLORS } from "../../../AppStyles";
 import { languageMapping } from "./consts";
+import * as ImagePicker from "expo-image-picker";
+
 export const createFavoriteImageObj = (idx, favoriteImage) => {
   return {
     id: idx,
@@ -33,4 +35,23 @@ export const createDefaultFirstReceivingItemList = (numberCards) => {
 
 export const getNameByLang = (image, language) => {
   return image[languageMapping[language]] || image.name;
+};
+
+export const pickImageAndUpload = async () => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== "granted") {
+    alert("Permission to access camera roll is required!");
+    return;
+  }
+
+  let pickerResult = await ImagePicker.launchImageLibraryAsync();
+
+  if (pickerResult?.cancelled) {
+    console.log("User cancelled image picker");
+    return null;
+  }
+
+  const uri = pickerResult.assets[0].uri;
+
+  return uri;
 };

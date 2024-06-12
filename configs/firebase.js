@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { Platform } from "react-native";
+import { getStorage } from "firebase/storage";
 
 import {
   readDocuments,
@@ -15,7 +16,7 @@ const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
   projectId: "communivoice-bea29",
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  storageBucket: "communivoice-bea29.appspot.com",
   messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
   appId:
     Platform.OS === "ios"
@@ -26,6 +27,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const fireDB = getFirestore(app);
+export const storage = getStorage(app);
+
 export default app;
 
 // Function to test Firestore connection by fetching some data

@@ -61,8 +61,8 @@ const CategoryManager = () => {
           id: category.id,
           name: category.name,
           images: items
-            .filter((item) => item.categoryId === category.id)
-            .map((item) => ({
+            .filter((item: any) => item.categoryId === category.id)
+            .map((item: any) => ({
               ...item,
               src: { uri: item.image }, // Ensure the image source is set correctly
             })),
@@ -169,11 +169,11 @@ const CategoryManager = () => {
   };
 
   // Function to add a new item to a specific category
-  const addItemToCategory = async () => {
+  const addItemToCategory = async (item: any) => {
+    const { image, name } = item;
     const newItem = {
-      name: newItemName,
-      image:
-        "https://firebasestorage.googleapis.com/v0/b/communivoice-bea29.appspot.com/o/person.png?alt=media&token=ed4ad5e8-ffcd-4c87-be29-6c960751f664",
+      name: name,
+      image: image,
       categoryId: newItemCategoryId,
       isStar: false,
     };

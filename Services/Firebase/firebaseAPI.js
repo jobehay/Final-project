@@ -7,7 +7,8 @@ import {
   deleteDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { fireDB } from "../../configs/firebase";
+import { fireDB, storage } from "../../configs/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Function to create a document in a specified collection
 export const createDocument = async (collectionName, data) => {
@@ -92,6 +93,21 @@ export const findDocument = async (
     return foundDocument;
   } catch (error) {
     console.error("Error finding document: ", error);
+    return null;
+  }
+};
+
+export const uploadImage = async (uri, fileName) => {
+  try {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const storageRef = ref(storage, fileName);
+    await uploadBytes(storageRef, blob);
+    const url = await getDownloadURL(storageRef);
+    console.log("Image uploaded to: ", url);
+    return url;
+  } catch (error) {
+    console.error("Error uploading image: ", error);
     return null;
   }
 };
