@@ -124,19 +124,27 @@ const CategoryManager = () => {
   };
 
   // Function to delete a category by ID
-  const deleteCategory = async (id) => {
+  const deleteCategory = (id) => {
     if (protectedCategoryIds.includes(id)) return;
-    const items = await readDocuments(MyCollections.ITEMS);
 
-    const itemsByCategoreyId = items.filter(
-      (item: any) => item.categoryId == id
+    Alert.alert(
+      "Confirm Deletion",
+      "Are you sure you want to delete this category?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteDocument(MyCollections.CATEGORIES, id);
+            setCategories(categories.filter((category) => category.id !== id));
+          },
+        },
+      ]
     );
-    itemsByCategoreyId.forEach(async (item: any) => {
-      await deleteDocument(MyCollections.ITEMS, item.id);
-      await deleteImage(item.image);
-    });
-    await deleteDocument(MyCollections.CATEGORIES, id);
-    setCategories(categories.filter((category) => category.id !== id));
   };
 
   // Toggle editing mode for a category title
