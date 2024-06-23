@@ -187,7 +187,9 @@ const DragAndDropContainer = () => {
 
   const onClickResetHandler = async () => {
     const items = await readDocuments(MyCollections.ITEMS);
-    const starItems = items.filter((item) => item.isStar);
+    const starItems = items.filter(
+      (item: any) => item.isStar && item.deviceID === userDetails?.deviceID
+    );
     const favoriteImages = starItems
       .map((item, idx) => createFavoriteImageObj(idx, item))
       .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp
