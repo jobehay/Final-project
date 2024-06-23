@@ -25,6 +25,8 @@ import {
 import { MyCollections } from "../../Services/Firebase/collectionNames";
 import AddItemModal from "./AddItemModal";
 import { useNavigation } from "@react-navigation/native";
+import { getCurrentUserOrCreateUser } from "../../Services/Firebase/User/UserServices";
+import { SCREENS } from "../../constants";
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
@@ -44,6 +46,17 @@ const CategoryManager = () => {
     "cnnblVZbdse2ZqUSdvqt",
   ];
 
+  const [userDetails, setUserDetails] = useState(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      const currentUser = await getCurrentUserOrCreateUser();
+
+      setUserDetails(currentUser);
+    };
+
+    fetchData();
+  }, []);
+
   useEffect(() => {
     setLoading(true); // Set loading to true before fetching data
 
@@ -57,9 +70,10 @@ const CategoryManager = () => {
         );
 
         const otherCategories = categoriesFromFirebase.filter(
-          (category) => !protectedCategoryIds.includes(category.id)
+          (category) =>
+            !protectedCategoryIds.includes(category.id) &&
+            category?.deviceID === userDetails?.deviceID
         );
-
         const sortedCategories = [
           ...protectedCategories,
           ...otherCategories,
@@ -67,8 +81,8 @@ const CategoryManager = () => {
           id: category.id,
           name: category.name,
           images: items
-            .filter((item) => item.categoryId === category.id)
-            .map((item) => ({
+            .filter((item: any) => item.categoryId === category.id)
+            .map((item: any) => ({
               ...item,
               src: { uri: item.image }, // Ensure the image source is set correctly
             })),
@@ -110,6 +124,7 @@ const CategoryManager = () => {
     // Create the new category in Firebase
     const newCategoryId = await createDocument(MyCollections.CATEGORIES, {
       name: newCategoryName,
+      deviceID: userDetails?.deviceID,
     });
 
     if (newCategoryId) {
@@ -198,6 +213,7 @@ const CategoryManager = () => {
       image: image,
       categoryId: newItemCategoryId,
       isStar: false,
+      deviceID: userDetails?.deviceID,
     };
     const newItemId = await createDocument(MyCollections.ITEMS, newItem);
     setCategories(
@@ -305,7 +321,7 @@ const CategoryManager = () => {
   };
 
   const selectImage = (img) => {
-    navigation.navigate("Home", { newImage: img });
+    navigation.navigate(SCREENS.HOME, { newImage: img });
   };
 
   return (
