@@ -1,5 +1,12 @@
 import * as React from "react";
-import { StyleSheet, Text, View, Dimensions, Image } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+  Image,
+  LayoutAnimation,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { DraxProvider, DraxView, DraxList } from "react-native-drax";
 import { COLORS, iconSize } from "../../AppStyles";
@@ -18,6 +25,7 @@ import {
   getNameByLang,
 } from "../../Services/Firebase/Image/ImageServices";
 import { CARDS_NUMBERS } from "../../Services/Firebase/Image/consts";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 const gestureRootViewStyle = { flex: 1 };
 
@@ -27,6 +35,8 @@ const DragAndDropContainer = () => {
     i18n: { language },
   } = useTranslation();
   const speak = useSpeak();
+  const navigation = useNavigation();
+  const route = useRoute();
 
   const [receivingItemList, setReceivedItemList] = React.useState(
     createDefaultFirstReceivingItemList(CARDS_NUMBERS)
@@ -38,27 +48,36 @@ const DragAndDropContainer = () => {
   React.useEffect(() => {
     const unsubscribe = readDocumentsRealTime(MyCollections.ITEMS, (items) => {
       const starItems = items.filter((item) => item.isStar);
-      const favoriteImages = starItems.map((item, idx) =>
-        createFavoriteImageObj(idx, item)
-      );
-      setDragItemListMiddle(favoriteImages);
+      const favoriteImages = starItems
+        .map((item, idx) => createFavoriteImageObj(idx, item))
+        .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp
+      setDragItemListMiddle([...favoriteImages.reverse(), null]); // Newest items on the right, add null at the end for the new item
     });
 
     return () => unsubscribe();
   }, []);
 
+  React.useEffect(() => {
+    if (route.params?.newImage) {
+      const newImage = route.params.newImage;
+      setDragItemListMiddle((prev) => [...prev, newImage]);
+    }
+  }, [route.params?.newImage]);
+
   const DragUIComponent = ({ item, index }) => {
+    if (!item) return <View style={styles.emptySlot} />;
+
     const itemName = getNameByLang(item, language);
     return (
       <DraxView
         style={[
           styles.draggableBox,
-          { backgroundColor: item.background_color },
+          styles.itemBackground, // Add this line to apply background color
         ]}
         draggingStyle={styles.dragging}
         dragReleasedStyle={styles.dragging}
         hoverDraggingStyle={styles.hoverDragging}
-        dragPayload={index}
+        dragPayload={{ from: "middle", index }}
         longPressDelay={150}
         key={index}
         onDragStart={() => {
@@ -66,6 +85,9 @@ const DragAndDropContainer = () => {
         }}
         onDragEnd={() => {
           if (!itemDroppedInside) {
+            LayoutAnimation.configureNext(
+              LayoutAnimation.Presets.easeInEaseOut
+            );
             setDragItemListMiddle(originalPositions);
           }
           setItemDroppedInside(false);
@@ -87,9 +109,10 @@ const DragAndDropContainer = () => {
       <DraxView
         style={[
           styles.receivingZone,
-          { backgroundColor: item.background_color },
+          styles.itemBackground, // Add this line to apply background color
         ]}
         receivingStyle={styles.receiving}
+        dragPayload={{ from: "receiving", index }}
         renderContent={({ viewState }) => {
           const receivingDrag = viewState && viewState.receivingDrag;
           const payload = receivingDrag && receivingDrag.payload;
@@ -104,20 +127,41 @@ const DragAndDropContainer = () => {
         }}
         key={index}
         onReceiveDragDrop={(event) => {
-          const draggedIndex = event.dragged.payload;
-          const newReceivingItemList = [...receivingItemList];
-          const newDragItemMiddleList = dragItemMiddleList.filter(
-            (_, idx) => idx !== draggedIndex
-          );
+          const draggedIndex = event.dragged.payload.index;
+          const from = event.dragged.payload.from;
 
-          if (isEmptySlot) {
-            newReceivingItemList[index] = dragItemMiddleList[draggedIndex];
-            setReceivedItemList(newReceivingItemList);
-            setDragItemListMiddle(newDragItemMiddleList);
-            setItemDroppedInside(true);
-          } else {
-            setDragItemListMiddle(originalPositions);
+          const newReceivingItemList = [...receivingItemList];
+          const newDragItemMiddleList = [...dragItemMiddleList];
+
+          if (from === "middle") {
+            newDragItemMiddleList[draggedIndex] = null;
+            if (isEmptySlot) {
+              newReceivingItemList[index] = dragItemMiddleList[draggedIndex];
+            } else {
+              // Find the first empty slot to the right
+              let targetIndex = index;
+              while (
+                targetIndex < newReceivingItemList.length - 1 &&
+                newReceivingItemList[targetIndex + 1]
+              ) {
+                targetIndex++;
+              }
+              // Shift items to the right
+              for (let i = targetIndex; i > index; i--) {
+                newReceivingItemList[i] = newReceivingItemList[i - 1];
+              }
+              newReceivingItemList[index] = dragItemMiddleList[draggedIndex];
+            }
+          } else if (from === "receiving") {
+            const temp = newReceivingItemList[index];
+            newReceivingItemList[index] = newReceivingItemList[draggedIndex];
+            newReceivingItemList[draggedIndex] = temp;
           }
+
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setReceivedItemList(newReceivingItemList);
+          setDragItemListMiddle(newDragItemMiddleList);
+          setItemDroppedInside(true);
         }}
       />
     );
@@ -129,11 +173,11 @@ const DragAndDropContainer = () => {
 
   const onClickResetHandler = async () => {
     const items = await readDocuments(MyCollections.ITEMS);
-    const starItems = items.filter((item: any) => item.isStar);
-    const favoriteImages = starItems.map((item, idx) =>
-      createFavoriteImageObj(idx, item)
-    );
-    setDragItemListMiddle(favoriteImages);
+    const starItems = items.filter((item) => item.isStar);
+    const favoriteImages = starItems
+      .map((item, idx) => createFavoriteImageObj(idx, item))
+      .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp
+    setDragItemListMiddle([...favoriteImages.reverse(), null]); // Newest items on the right, add null at the end for the new item
     setReceivedItemList(createDefaultFirstReceivingItemList(CARDS_NUMBERS));
     setOriginalPositions([]);
   };
@@ -197,6 +241,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    backgroundColor: COLORS.primary, // Change the overall background color
   },
   icon: {
     marginTop: 5,
@@ -223,12 +268,27 @@ const styles = StyleSheet.create({
     marginRight: 6,
     marginLeft: 6,
   },
+  itemBackground: {
+    backgroundColor: COLORS.grey, // Change the item background color to grey
+  },
+  emptySlot: {
+    margin: 10,
+    marginTop: 20,
+    borderRadius: 5,
+    width: Dimensions.get("window").width / 4 - 12,
+    height: Dimensions.get("window").width / 4 - 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 6,
+    marginLeft: 6,
+    backgroundColor: "transparent",
+  },
   dragging: {
     opacity: 1,
   },
   hoverDragging: {
     borderWidth: 2,
-    borderColor: COLORS.grey,
+    borderColor: COLORS.primary,
     alignItems: "center",
   },
   receivingContainer: {
@@ -243,7 +303,6 @@ const styles = StyleSheet.create({
   },
   draxListContainer: {
     height: "70%",
-    backgroundColor: COLORS.primary,
   },
   subText: {
     fontSize: 14,

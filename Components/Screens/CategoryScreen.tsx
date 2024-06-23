@@ -24,6 +24,7 @@ import {
 } from "../../Services/Firebase/firebaseAPI";
 import { MyCollections } from "../../Services/Firebase/collectionNames";
 import AddItemModal from "./AddItemModal";
+import { useNavigation } from "@react-navigation/native";
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
@@ -33,6 +34,8 @@ const CategoryManager = () => {
   const [newItemName, setNewItemName] = useState("");
   const [editingCategoryNames, setEditingCategoryNames] = useState({});
   const [loading, setLoading] = useState(true);
+
+  const navigation = useNavigation();
 
   const protectedCategoryIds = [
     "Edspm4Kbx1huAiSCjG8L",
@@ -64,8 +67,8 @@ const CategoryManager = () => {
           id: category.id,
           name: category.name,
           images: items
-            .filter((item: any) => item.categoryId === category.id)
-            .map((item: any) => ({
+            .filter((item) => item.categoryId === category.id)
+            .map((item) => ({
               ...item,
               src: { uri: item.image }, // Ensure the image source is set correctly
             })),
@@ -301,6 +304,10 @@ const CategoryManager = () => {
     );
   };
 
+  const selectImage = (img) => {
+    navigation.navigate("Home", { newImage: img });
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -314,7 +321,7 @@ const CategoryManager = () => {
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => <View style={styles.separator} />} // Add separator here
         ListHeaderComponent={
           <View style={styles.addCategoryContainer}>
             <TextInput
@@ -374,52 +381,54 @@ const CategoryManager = () => {
               data={item.images}
               keyExtractor={(img) => img.id}
               renderItem={({ item: img, index }) => (
-                <View style={styles.imageContainer}>
-                  <Image source={img.src} style={styles.image} />
-                  {img.editing ? (
-                    <TextInput
-                      style={styles.imageTextInput}
-                      value={img.name}
-                      onChangeText={(newName) =>
-                        updateImageName(item.id, index, newName)
-                      }
-                    />
-                  ) : (
-                    <Text style={styles.imageText}>{img.name}</Text>
-                  )}
-                  <View style={styles.iconContainer}>
-                    <TouchableOpacity
-                      onPress={() => toggleImageEditing(item.id, index)}
-                    >
-                      <Icon
-                        name={img.editing ? "save" : "edit"}
-                        size={16}
-                        style={styles.editButton}
+                <TouchableOpacity onPress={() => selectImage(img)}>
+                  <View style={styles.imageContainer}>
+                    <Image source={img.src} style={styles.image} />
+                    {img.editing ? (
+                      <TextInput
+                        style={styles.imageTextInput}
+                        value={img.name}
+                        onChangeText={(newName) =>
+                          updateImageName(item.id, index, newName)
+                        }
                       />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => deleteItem(item.id, index, img)}
-                    >
-                      <Icon
-                        name="trash"
-                        size={16}
-                        color="red"
-                        style={styles.deleteButton}
-                      />
-                    </TouchableOpacity>
-                    {/* Star Icon */}
-                    <TouchableOpacity
-                      onPress={() => toggleStar(item.id, index, img)}
-                    >
-                      <Icon
-                        name={img.isStar ? "star" : "star-o"}
-                        size={16}
-                        color="gold"
-                        style={styles.starButton}
-                      />
-                    </TouchableOpacity>
+                    ) : (
+                      <Text style={styles.imageText}>{img.name}</Text>
+                    )}
+                    <View style={styles.iconContainer}>
+                      <TouchableOpacity
+                        onPress={() => toggleImageEditing(item.id, index)}
+                      >
+                        <Icon
+                          name={img.editing ? "save" : "edit"}
+                          size={16}
+                          style={styles.editButton}
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => deleteItem(item.id, index, img)}
+                      >
+                        <Icon
+                          name="trash"
+                          size={16}
+                          color="red"
+                          style={styles.deleteButton}
+                        />
+                      </TouchableOpacity>
+                      {/* Star Icon */}
+                      <TouchableOpacity
+                        onPress={() => toggleStar(item.id, index, img)}
+                      >
+                        <Icon
+                          name={img.isStar ? "star" : "star-o"}
+                          size={16}
+                          color="gold"
+                          style={styles.starButton}
+                        />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               )}
             />
           </View>
@@ -454,7 +463,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   separator: {
-    height: 20,
+    height: 1,
+    backgroundColor: "#ddd", // Change this color to your preference
+    marginVertical: 10, // Adjust the margin as needed
   },
   categoryContainer: {
     marginBottom: 20,
