@@ -26,6 +26,7 @@ import {
 } from "../../Services/Firebase/Image/ImageServices";
 import { CARDS_NUMBERS } from "../../Services/Firebase/Image/consts";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { getCurrentUserOrCreateUser } from "../../Services/Firebase/User/UserServices";
 
 const gestureRootViewStyle = { flex: 1 };
 
@@ -45,9 +46,22 @@ const DragAndDropContainer = () => {
   const [originalPositions, setOriginalPositions] = React.useState([]);
   const [itemDroppedInside, setItemDroppedInside] = React.useState(false);
 
+  const [userDetails, setUserDetails] = React.useState(null);
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const currentUser = await getCurrentUserOrCreateUser();
+
+      setUserDetails(currentUser);
+    };
+
+    fetchData();
+  }, []);
+
   React.useEffect(() => {
     const unsubscribe = readDocumentsRealTime(MyCollections.ITEMS, (items) => {
-      const starItems = items.filter((item) => item.isStar);
+      const starItems = items.filter(
+        (item) => item.isStar && item.deviceID === userDetails?.deviceID
+      );
       const favoriteImages = starItems
         .map((item, idx) => createFavoriteImageObj(idx, item))
         .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp
@@ -55,7 +69,7 @@ const DragAndDropContainer = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [userDetails]);
 
   React.useEffect(() => {
     if (route.params?.newImage) {

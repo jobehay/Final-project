@@ -115,7 +115,7 @@ const CategoryManager = () => {
       unsubscribeCategories();
       unsubscribeItems();
     };
-  }, []);
+  }, [userDetails]);
 
   // Function to add a new, empty category
   const addCategory = async () => {
