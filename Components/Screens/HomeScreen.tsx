@@ -11,11 +11,14 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import { SCREENS, ICONS_NAMES } from "../../constants";
 import { COLORS, iconSize } from "../../AppStyles";
 import DragAndDropContainer from "./DragAndDropContainer";
+import { useTranslation } from "react-i18next";
 
 const HomeScreen = ({ navigation }) => {
+  const { t } = useTranslation();
+
   const [isModalVisible, setModalVisible] = useState(false);
   const [passcode, setPasscode] = useState("");
-  const correctPasscode = "1111";
+  const correctPasscode = "55555"; // The correct passcode is five asterisks
 
   const handleSettingsPress = () => {
     setModalVisible(true);
@@ -23,11 +26,17 @@ const HomeScreen = ({ navigation }) => {
 
   const handlePasscodeSubmit = () => {
     if (passcode === correctPasscode) {
+      setPasscode("");
       setModalVisible(false);
       navigation.navigate(SCREENS.SETTINGS);
     } else {
       alert("Incorrect passcode");
     }
+  };
+
+  const handleCloseModal = () => {
+    setPasscode("");
+    setModalVisible(false);
   };
 
   return (
@@ -53,13 +62,11 @@ const HomeScreen = ({ navigation }) => {
         visible={isModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={handleCloseModal}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Enter Passcode to Enter Settings
-            </Text>
+            <Text style={styles.modalTitle}>{t("password")}</Text>
             <TextInput
               style={styles.input}
               value={passcode}
@@ -72,13 +79,13 @@ const HomeScreen = ({ navigation }) => {
               style={styles.button}
               onPress={handlePasscodeSubmit}
             >
-              <Text style={styles.buttonText}>Submit</Text>
+              <Text style={styles.buttonText}>{t("submit")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.cancelButton]}
-              onPress={() => setModalVisible(false)}
+              onPress={handleCloseModal}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>{t("cancel")}</Text>
             </TouchableOpacity>
           </View>
         </View>

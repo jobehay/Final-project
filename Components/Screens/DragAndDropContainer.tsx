@@ -6,6 +6,7 @@ import {
   Dimensions,
   Image,
   LayoutAnimation,
+  TouchableOpacity,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { DraxProvider, DraxView, DraxList } from "react-native-drax";
@@ -84,10 +85,7 @@ const DragAndDropContainer = () => {
     const itemName = getNameByLang(item, language);
     return (
       <DraxView
-        style={[
-          styles.draggableBox,
-          styles.itemBackground, // Add this line to apply background color
-        ]}
+        style={[styles.draggableBox, styles.itemBackground]}
         draggingStyle={styles.dragging}
         dragReleasedStyle={styles.dragging}
         hoverDraggingStyle={styles.hoverDragging}
@@ -121,10 +119,7 @@ const DragAndDropContainer = () => {
 
     return (
       <DraxView
-        style={[
-          styles.receivingZone,
-          styles.itemBackground, // Add this line to apply background color
-        ]}
+        style={[styles.receivingZone, styles.itemBackground]}
         receivingStyle={styles.receiving}
         dragPayload={{ from: "receiving", index }}
         renderContent={({ viewState }) => {
@@ -148,11 +143,17 @@ const DragAndDropContainer = () => {
           const newDragItemMiddleList = [...dragItemMiddleList];
 
           if (from === "middle") {
+            if (newReceivingItemList.filter((item) => item.image).length >= 4) {
+              LayoutAnimation.configureNext(
+                LayoutAnimation.Presets.easeInEaseOut
+              );
+              setDragItemListMiddle(originalPositions);
+              return;
+            }
             newDragItemMiddleList[draggedIndex] = null;
             if (isEmptySlot) {
               newReceivingItemList[index] = dragItemMiddleList[draggedIndex];
             } else {
-              // Find the first empty slot to the right
               let targetIndex = index;
               while (
                 targetIndex < newReceivingItemList.length - 1 &&
@@ -160,7 +161,6 @@ const DragAndDropContainer = () => {
               ) {
                 targetIndex++;
               }
-              // Shift items to the right
               for (let i = targetIndex; i > index; i--) {
                 newReceivingItemList[i] = newReceivingItemList[i - 1];
               }
@@ -192,8 +192,8 @@ const DragAndDropContainer = () => {
     );
     const favoriteImages = starItems
       .map((item, idx) => createFavoriteImageObj(idx, item))
-      .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp
-    setDragItemListMiddle([...favoriteImages.reverse(), null]); // Newest items on the right, add null at the end for the new item
+      .sort((a, b) => a.timestamp - b.timestamp);
+    setDragItemListMiddle([...favoriteImages.reverse(), null]);
     setReceivedItemList(createDefaultFirstReceivingItemList(CARDS_NUMBERS));
     setOriginalPositions([]);
   };
@@ -222,24 +222,34 @@ const DragAndDropContainer = () => {
               scrollEnabled={true}
             />
           </View>
-          <View style={styles.buttonsContainer}>
-            <Icon
-              style={styles.icon}
-              name={ICONS_NAMES.reset}
-              size={iconSize}
-              onPress={onClickResetHandler}
-            />
-            <Icon
-              style={styles.icon}
-              name={ICONS_NAMES.microphone}
-              size={iconSize}
-              onPress={onClickSpeechHandler}
-            />
-          </View>
           <View style={styles.receivingContainer}>
             {receivingItemList.map((item, index) => (
               <ReceivingZoneUIComponent key={index} item={item} index={index} />
             ))}
+          </View>
+          <View style={styles.buttonsContainer}>
+            <TouchableOpacity
+              style={[styles.button, styles.resetButton]}
+              onPress={onClickResetHandler}
+            >
+              <Icon
+                style={styles.icon}
+                name={ICONS_NAMES.reset}
+                size={iconSize}
+              />
+              <Text style={styles.buttonText}>{t("reset")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.speechButton]}
+              onPress={onClickSpeechHandler}
+            >
+              <Icon
+                style={styles.icon}
+                name={ICONS_NAMES.microphone}
+                size={iconSize}
+              />
+              <Text style={styles.buttonText}>{t("speak")}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </DraxProvider>
@@ -254,13 +264,14 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-around",
+    padding: 10,
   },
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary, // Change the overall background color
+    backgroundColor: COLORS.primary,
   },
   icon: {
-    marginTop: 5,
+    marginRight: 5,
   },
   receivingZone: {
     height: Dimensions.get("window").width / 4 - 12,
@@ -269,9 +280,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 5,
+    backgroundColor: COLORS.grey,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
   },
   receiving: {
     borderWidth: 2,
+    borderColor: COLORS.primary,
   },
   draggableBox: {
     margin: 10,
@@ -283,9 +298,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 6,
     marginLeft: 6,
+    backgroundColor: COLORS.grey,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
   },
   itemBackground: {
-    backgroundColor: COLORS.grey, // Change the item background color to grey
+    backgroundColor: COLORS.white,
   },
   emptySlot: {
     margin: 10,
@@ -298,6 +316,8 @@ const styles = StyleSheet.create({
     marginRight: 6,
     marginLeft: 6,
     backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: COLORS.primary,
   },
   dragging: {
     opacity: 1,
@@ -312,13 +332,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: COLORS.secondary,
     borderRadius: 5,
-    height: "50%",
+    height: "20%",
+    justifyContent: "space-around",
   },
   itemSeparator: {
     height: 15,
   },
   draxListContainer: {
-    height: "70%",
+    height: "60%",
   },
   subText: {
     fontSize: 14,
@@ -330,5 +351,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     resizeMode: "cover",
     marginBottom: 5,
+  },
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+    borderRadius: 5,
+  },
+  resetButton: {
+    backgroundColor: COLORS.red,
+  },
+  speechButton: {
+    backgroundColor: COLORS.green,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    marginLeft: 5,
   },
 });

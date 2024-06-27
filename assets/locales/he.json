@@ -1,5 +1,8 @@
 {
   "screen.settings.title": "הגדרות",
-  "general.back":"חזרה",
-  "screen.settings.languages": "השפה"
+  "general.back": "חזרה",
+  "screen.settings.languages": "השפה",
+  "password": "הזן את המספר 5 חמש פעמים כדי להיכנס לדף ההגדרות",
+  "submit": "שלח",
+  "cancel": "ביטול"
 }

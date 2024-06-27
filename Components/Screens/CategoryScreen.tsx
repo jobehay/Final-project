@@ -39,13 +39,6 @@ const CategoryManager = () => {
 
   const navigation = useNavigation();
 
-  const protectedCategoryIds = [
-    "Edspm4Kbx1huAiSCjG8L",
-    "U8NVNaLzdVncknDG8D5B",
-    "a8cfGdsLX3o6PVmy4M3d",
-    "cnnblVZbdse2ZqUSdvqt",
-  ];
-
   const [userDetails, setUserDetails] = useState(null);
   useEffect(() => {
     const fetchData = async () => {
@@ -65,21 +58,13 @@ const CategoryManager = () => {
       async (categoriesFromFirebase) => {
         const items = await readDocuments(MyCollections.ITEMS);
 
-        const protectedCategories = categoriesFromFirebase.filter((category) =>
-          protectedCategoryIds.includes(category.id)
-        );
-
         const otherCategories = categoriesFromFirebase.filter(
-          (category) =>
-            !protectedCategoryIds.includes(category.id) &&
-            category?.deviceID === userDetails?.deviceID
+          (category) => category?.deviceID === userDetails?.deviceID
         );
-        const sortedCategories = [
-          ...protectedCategories,
-          ...otherCategories,
-        ].map((category) => ({
+        const sortedCategories = [...otherCategories].map((category) => ({
           id: category.id,
           name: category.name,
+          isCommon: category.isCommon,
           images: items
             .filter((item: any) => item.categoryId === category.id)
             .map((item: any) => ({
@@ -135,15 +120,16 @@ const CategoryManager = () => {
         images: [], // Empty array for images
         editing: false,
       };
-      setCategories([...categories, newCategory]);
+
+      // Always add the new category at the end
+      const updatedCategories = [...categories, newCategory];
+      setCategories(updatedCategories);
       setNewCategoryName("");
     }
   };
 
   // Function to delete a category by ID
   const deleteCategory = (id) => {
-    if (protectedCategoryIds.includes(id)) return;
-
     Alert.alert(
       "Confirm Deletion",
       "Are you sure you want to delete this category?",
@@ -166,8 +152,6 @@ const CategoryManager = () => {
 
   // Toggle editing mode for a category title
   const toggleCategoryEditing = (id) => {
-    if (protectedCategoryIds.includes(id)) return;
-
     setCategories(
       categories.map((category) =>
         category.id === id
@@ -179,8 +163,6 @@ const CategoryManager = () => {
 
   // Handle category name change with debouncing
   const handleCategoryNameChange = (id, newName) => {
-    if (protectedCategoryIds.includes(id)) return;
-
     setEditingCategoryNames({ ...editingCategoryNames, [id]: newName });
 
     // Debounce the update call
@@ -368,7 +350,7 @@ const CategoryManager = () => {
               ) : (
                 <Text style={styles.categoryTitle}>{item.name}</Text>
               )}
-              {!protectedCategoryIds.includes(item.id) && (
+              {!item.isCommon && (
                 <>
                   <TouchableOpacity
                     onPress={() => toggleCategoryEditing(item.id)}

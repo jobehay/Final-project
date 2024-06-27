@@ -1,5 +1,8 @@
 {
   "screen.settings.title": "settings",
-  "general.back":"Back",
-  "screen.settings.languages": "Language"
+  "general.back": "Back",
+  "screen.settings.languages": "Language",
+  "password": "Enter the number 5 five times to enter the settings page",
+  "submit": "submit",
+  "cancel": "cancel"
 }

@@ -1,5 +1,8 @@
 {
-  "screen.settings.title":"الاعدادات",
-  "general.back":"عودة",
-  "screen.settings.languages": "اللغة"
+  "screen.settings.title": "الاعدادات",
+  "general.back": "عودة",
+  "screen.settings.languages": "اللغة",
+  "password": "أدخل الرقم 5 خمس مرات للدخول إلى صفحة الإعدادات",
+  "submit": "يُقدِّم",
+  "cancel": "إلغاء"
 }
