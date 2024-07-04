@@ -10,13 +10,6 @@ import { FONT_SIZE } from "./AppStyles";
 import React, { useEffect, useState } from "react";
 import { testFirestoreConnection } from "./configs/firebase";
 import { getCurrentUserOrCreateUser } from "./Services/Firebase/User/UserServices";
-import {
-  createDocument,
-  findDocument,
-  readDocuments,
-} from "./Services/Firebase/firebaseAPI";
-import { MyCollections } from "./Services/Firebase/collectionNames";
-import { defaultUser } from "./Services/Firebase/User/UserModel";
 const Stack = createStackNavigator();
 
 const App = () => {
@@ -34,57 +27,7 @@ const App = () => {
       setUserDetails(currentUser);
     };
 
-    const createCommonData = async () => {
-      const categoriesCommon = await readDocuments(
-        MyCollections.CATEGORIES_COMMON
-      );
-      const itemsCommon = await readDocuments(MyCollections.ITEMS_COMMON);
-      categoriesCommon.forEach(async (categoryCommon: any) => {
-        let newCategoryCommonId = await findDocument(
-          MyCollections.CATEGORIES,
-          "name",
-          categoryCommon.name
-        );
-
-        if (!newCategoryCommonId) {
-          newCategoryCommonId = await createDocument(MyCollections.CATEGORIES, {
-            name: categoryCommon.name,
-            deviceID: defaultUser?.deviceID,
-            isCommon: true,
-          });
-        }
-
-        const itemsCommonFilterByCategoryName = itemsCommon.filter(
-          (item: any) => item.categoryId === categoryCommon.id
-        );
-
-        itemsCommonFilterByCategoryName.forEach(async (itemCommon: any) => {
-          if (typeof newCategoryCommonId === "object") {
-            newCategoryCommonId = newCategoryCommonId.id;
-          }
-
-          const item = await findDocument(
-            MyCollections.ITEMS,
-            "deviceIdAndCategoryId",
-            `${defaultUser?.deviceID}${newCategoryCommonId}`
-          );
-
-          if (!item)
-            await createDocument(MyCollections.ITEMS, {
-              name: itemCommon.name || "",
-              categoryId: newCategoryCommonId,
-              image: itemCommon.image || "",
-              isStar: itemCommon.isStar || false,
-              deviceID: defaultUser?.deviceID,
-              isCommon: true,
-              deviceIdAndCategoryId: `${defaultUser?.deviceID}${newCategoryCommonId}`,
-            });
-        });
-      });
-    };
-
     fetchData();
-    createCommonData();
   }, []);
 
   return (

@@ -69,21 +69,28 @@ const CategoryManager = () => {
         const items = await readDocuments(MyCollections.ITEMS);
 
         const relevantCategories = categoriesFromFirebase.filter(
-          (category) =>
-            category?.deviceID === userDetails?.deviceID || category?.isCommon
+          (category) => category?.deviceID === userDetails?.deviceID
         );
-        const sortedCategories = [...relevantCategories]
+
+        const sortedCategories = relevantCategories
           .map((category) => ({
             id: category.id,
             name: category.name,
             isCommon: category.isCommon,
             timestamp: category.timestamp, // שמירת timestamp עבור מיון
             images: items
-              .filter((item: any) => item.categoryId === category.id)
-              .map((item: any) => ({
-                ...item,
-                src: { uri: item.image }, // Ensure the image source is set correctly
-              })),
+              .filter(
+                (item: any) =>
+                  item.categoryId === category.id &&
+                  item.deviceID === userDetails?.deviceID
+              )
+              .map((item: any) => {
+                console.log("xxxxxxx", item);
+                return {
+                  ...item,
+                  src: { uri: item.image }, // Ensure the image source is set correctly
+                };
+              }),
             editing: false,
           }))
           .sort((a, b) => {
