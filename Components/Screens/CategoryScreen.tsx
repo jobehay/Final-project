@@ -58,21 +58,31 @@ const CategoryManager = () => {
       async (categoriesFromFirebase) => {
         const items = await readDocuments(MyCollections.ITEMS);
 
-        const otherCategories = categoriesFromFirebase.filter(
-          (category) => category?.deviceID === userDetails?.deviceID
+        const relevantCategories = categoriesFromFirebase.filter(
+          (category) =>
+            category?.deviceID === userDetails?.deviceID || category?.isCommon
         );
-        const sortedCategories = [...otherCategories].map((category) => ({
-          id: category.id,
-          name: category.name,
-          isCommon: category.isCommon,
-          images: items
-            .filter((item: any) => item.categoryId === category.id)
-            .map((item: any) => ({
-              ...item,
-              src: { uri: item.image }, // Ensure the image source is set correctly
-            })),
-          editing: false,
-        }));
+        const sortedCategories = [...relevantCategories]
+          .map((category) => ({
+            id: category.id,
+            name: category.name,
+            isCommon: category.isCommon,
+            timestamp: category.timestamp, // שמירת timestamp עבור מיון
+            images: items
+              .filter((item: any) => item.categoryId === category.id)
+              .map((item: any) => ({
+                ...item,
+                src: { uri: item.image }, // Ensure the image source is set correctly
+              })),
+            editing: false,
+          }))
+          .sort((a, b) => {
+            if (a.isCommon && !b.isCommon) return -1;
+            if (!a.isCommon && b.isCommon) return 1;
+            return (
+              (new Date(a.timestamp) as any) - (new Date(b.timestamp) as any)
+            ); // מיון לפי timestamp
+          });
 
         setCategories(sortedCategories);
         setLoading(false); // Set loading to false after data is fetched
@@ -110,6 +120,7 @@ const CategoryManager = () => {
     const newCategoryId = await createDocument(MyCollections.CATEGORIES, {
       name: newCategoryName,
       deviceID: userDetails?.deviceID,
+      timestamp: new Date().toISOString(), // הוספת timestamp
     });
 
     if (newCategoryId) {
@@ -119,6 +130,7 @@ const CategoryManager = () => {
         name: newCategoryName,
         images: [], // Empty array for images
         editing: false,
+        timestamp: new Date().toISOString(), // הוספת timestamp
       };
 
       // Always add the new category at the end
