@@ -6,6 +6,7 @@ export const createFavoriteImageObj = (idx, favoriteImage) => {
   return {
     id: idx,
     image: favoriteImage.image,
+    position_date: favoriteImage.position_date,
     name_ar: favoriteImage.name_ar,
     name_en: favoriteImage.name_en,
     name_he: favoriteImage.name_he,

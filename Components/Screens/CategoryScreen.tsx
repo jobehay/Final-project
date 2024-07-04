@@ -30,6 +30,7 @@ import { getCurrentUserOrCreateUser } from "../../Services/Firebase/User/UserSer
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState("");
+  // const [starItems, setStarItems] = useState(null);
   const [newItemModalVisible, setNewItemModalVisible] = useState(false);
   const [newItemCategoryId, setNewItemCategoryId] = useState(null);
   const [newItemName, setNewItemName] = useState("");
@@ -46,6 +47,18 @@ const CategoryManager = () => {
 
     fetchData();
   }, []);
+
+  // React.useEffect(() => {
+  //   const unsubscribe = readDocumentsRealTime(MyCollections.ITEMS, (items) => {
+  //     setStarItems(
+  //       items.filter(
+  //         (item) => item.isStar && item.deviceID === userDetails?.deviceID
+  //       )
+  //     );
+  //   });
+
+  //   return () => unsubscribe();
+  // }, [userDetails]);
 
   useEffect(() => {
     setLoading(true); // Set loading to true before fetching data
@@ -198,13 +211,14 @@ const CategoryManager = () => {
 
   // Function to add a new item to a specific category
   const addItemToCategory = async (item) => {
-    const { image, name } = item;
+    const { image, name, position_date } = item;
     const newItem = {
       name: name,
       image: image,
       categoryId: newItemCategoryId,
       isStar: false,
       deviceID: userDetails?.deviceID,
+      position: position_date || "",
     };
     const newItemId = await createDocument(MyCollections.ITEMS, newItem);
     setCategories(
@@ -294,9 +308,14 @@ const CategoryManager = () => {
   // Toggle star status for an image within a category
   const toggleStar = async (categoryId, index, item) => {
     const updatedItem = { ...item, isStar: !item.isStar };
+    const currentDate = new Date();
     await updateDocument(MyCollections.ITEMS, item.id, {
       isStar: updatedItem.isStar,
+      position_date: currentDate,
     });
+
+    console.log("starItems", currentDate);
+
     setCategories(
       categories.map((category) =>
         category.id === categoryId

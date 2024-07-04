@@ -59,25 +59,32 @@ const DragAndDropContainer = () => {
   }, []);
 
   React.useEffect(() => {
+    if (!userDetails) return;
     const unsubscribe = readDocumentsRealTime(MyCollections.ITEMS, (items) => {
       const starItems = items.filter(
-        (item) => item.isStar && item.deviceID === userDetails?.deviceID
+        (item) => item.isStar && item.deviceID === userDetails.deviceID
       );
       const favoriteImages = starItems
         .map((item, idx) => createFavoriteImageObj(idx, item))
         .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp
-      setDragItemListMiddle([...favoriteImages.reverse(), null]); // Newest items on the right, add null at the end for the new item
+      setDragItemListMiddle([...favoriteImages, null]); // Oldest items on the left, add null at the end for the new item
     });
 
     return () => unsubscribe();
   }, [userDetails]);
 
   React.useEffect(() => {
-    if (route.params?.newImage) {
-      const newImage = route.params.newImage;
-      setDragItemListMiddle((prev) => [...prev, newImage]);
+    if ((route as any).params?.newImage) {
+      const newImage = (route as any).params.newImage;
+      setDragItemListMiddle((prev) => {
+        const filteredPrev = prev.filter((item) => item !== null);
+        const updatedList = [...filteredPrev, newImage].sort(
+          (a, b) => a.timestamp - b.timestamp
+        );
+        return [...updatedList, null];
+      });
     }
-  }, [route.params?.newImage]);
+  }, [(route as any).params?.newImage]);
 
   const DragUIComponent = ({ item, index }) => {
     if (!item) return <View style={styles.emptySlot} />;
@@ -193,7 +200,7 @@ const DragAndDropContainer = () => {
     const favoriteImages = starItems
       .map((item, idx) => createFavoriteImageObj(idx, item))
       .sort((a, b) => a.timestamp - b.timestamp);
-    setDragItemListMiddle([...favoriteImages.reverse(), null]);
+    setDragItemListMiddle([...favoriteImages, null]);
     setReceivedItemList(createDefaultFirstReceivingItemList(CARDS_NUMBERS));
     setOriginalPositions([]);
   };
@@ -208,13 +215,32 @@ const DragAndDropContainer = () => {
     speak(buildSentence());
   };
 
+  console.log("======", dragItemMiddleList[0]);
   return (
     <GestureHandlerRootView style={gestureRootViewStyle}>
       <DraxProvider>
         <View style={styles.container}>
           <View style={styles.draxListContainer}>
             <DraxList
-              data={dragItemMiddleList}
+              data={dragItemMiddleList?.sort((a, b) => {
+                const positionDateA =
+                  a?.position_date.seconds * 1000 +
+                  a?.position_date.nanoseconds / 1000000;
+                const positionDateB =
+                  b?.position_date.seconds * 1000 +
+                  b?.position_date.nanoseconds / 1000000;
+
+                // Convert current_date from ISO 8601 string to milliseconds
+                const currentDateA = new Date(a?.position_date).getTime();
+                const currentDateB = new Date(b?.position_date).getTime();
+
+                // Compare position dates first, if they are equal then compare current dates
+                if (positionDateA === positionDateB) {
+                  return currentDateA - currentDateB;
+                } else {
+                  return positionDateA - positionDateB;
+                }
+              })}
               renderItemContent={DragUIComponent}
               keyExtractor={(item, index) => index.toString()}
               numColumns={4}
