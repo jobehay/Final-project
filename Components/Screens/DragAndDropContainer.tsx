@@ -26,7 +26,11 @@ import {
   getNameByLang,
 } from "../../Services/Firebase/Image/ImageServices";
 import { CARDS_NUMBERS } from "../../Services/Firebase/Image/consts";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { getCurrentUserOrCreateUser } from "../../Services/Firebase/User/UserServices";
 
 const gestureRootViewStyle = { flex: 1 };
@@ -85,6 +89,19 @@ const DragAndDropContainer = () => {
       });
     }
   }, [(route as any).params?.newImage]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchAndReset = async () => {
+        await onClickResetHandler();
+      };
+      fetchAndReset();
+      return () => {
+        setReceivedItemList(createDefaultFirstReceivingItemList(CARDS_NUMBERS));
+        setOriginalPositions([]);
+      };
+    }, [userDetails])
+  );
 
   const DragUIComponent = ({ item, index }) => {
     if (!item) return <View style={styles.emptySlot} />;
@@ -215,7 +232,6 @@ const DragAndDropContainer = () => {
     speak(buildSentence());
   };
 
-  console.log("======", dragItemMiddleList[0]);
   return (
     <GestureHandlerRootView style={gestureRootViewStyle}>
       <DraxProvider>
@@ -230,7 +246,6 @@ const DragAndDropContainer = () => {
                   b?.position_date.seconds * 1000 +
                   b?.position_date.nanoseconds / 1000000;
 
-                // Convert current_date from ISO 8601 string to milliseconds
                 const currentDateA = new Date(a?.position_date).getTime();
                 const currentDateB = new Date(b?.position_date).getTime();
 
