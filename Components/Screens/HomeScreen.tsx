@@ -73,7 +73,7 @@ const HomeScreen = ({ navigation }) => {
               onChangeText={setPasscode}
               keyboardType="numeric"
               secureTextEntry
-              placeholder="Enter Passcode"
+              placeholder={t("enterPassword")}
             />
             <TouchableOpacity
               style={styles.button}

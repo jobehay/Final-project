@@ -4,5 +4,8 @@
   "screen.settings.languages": "השפה",
   "password": "הזן את המספר 5 חמש פעמים כדי להיכנס לדף ההגדרות",
   "submit": "שלח",
-  "cancel": "ביטול"
+  "cancel": "ביטול",
+  "reset": "החזר",
+  "speak": "תדבר",
+  "enterPassword": "קוד סודי"
 }

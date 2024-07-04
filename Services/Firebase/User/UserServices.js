@@ -2,6 +2,7 @@ import { USER, defaultUser } from "../User/UserModel";
 import * as Device from "expo-device";
 import { MyCollections } from "../collectionNames";
 import { findDocument, createDocument } from "../firebaseAPI";
+import i18n from "i18next";
 
 export const getCurrentUser = async () => {
   try {
@@ -22,6 +23,7 @@ export const getCurrentUserOrCreateUser = async () => {
   try {
     let currentUser = await getCurrentUser();
     console.log("Current user :", currentUser);
+    i18n.changeLanguage(currentUser?.selectedLang);
     if (!currentUser) {
       const newUser = await createDocument(MyCollections.USERS, defaultUser);
       console.log("Create a new user", newUser);

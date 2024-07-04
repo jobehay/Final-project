@@ -4,5 +4,8 @@
   "screen.settings.languages": "اللغة",
   "password": "أدخل الرقم 5 خمس مرات للدخول إلى صفحة الإعدادات",
   "submit": "يُقدِّم",
-  "cancel": "إلغاء"
+  "cancel": "إلغاء",
+  "reset": "اعادة ضبط",
+  "speak": "تكلم",
+  "enterPassword": "ادحل الرقم السري"
 }
