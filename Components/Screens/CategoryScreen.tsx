@@ -26,7 +26,6 @@ import { MyCollections } from "../../Services/Firebase/collectionNames";
 import AddItemModal from "./AddItemModal";
 import { useNavigation } from "@react-navigation/native";
 import { getCurrentUserOrCreateUser } from "../../Services/Firebase/User/UserServices";
-import { SCREENS } from "../../constants";
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
@@ -36,8 +35,6 @@ const CategoryManager = () => {
   const [newItemName, setNewItemName] = useState("");
   const [editingCategoryNames, setEditingCategoryNames] = useState({});
   const [loading, setLoading] = useState(true);
-
-  const navigation = useNavigation();
 
   const [userDetails, setUserDetails] = useState(null);
   useEffect(() => {
@@ -314,10 +311,6 @@ const CategoryManager = () => {
     );
   };
 
-  const selectImage = (img) => {
-    navigation.navigate(SCREENS.HOME, { newImage: img });
-  };
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -391,7 +384,7 @@ const CategoryManager = () => {
               data={item.images}
               keyExtractor={(img) => img.id}
               renderItem={({ item: img, index }) => (
-                <TouchableOpacity onPress={() => selectImage(img)}>
+                <TouchableOpacity>
                   <View style={styles.imageContainer}>
                     <Image source={img.src} style={styles.image} />
                     {img.editing ? (
