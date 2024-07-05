@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 10.1.1"
+    "version": ">= 3.0.0"
   },
   "build": {
     "development": {
@@ -10,7 +10,16 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "android": {
+        "buildType": "apk",
+        "image": "latest",
+        "env": {
+          "GOOGLE_SERVICES_JSON": "@env:GOOGLE_SERVICES_JSON"
+        }
+      },
+      "distribution": "store"
+    }
   },
   "submit": {
     "production": {}
