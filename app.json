@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.ayajobeh.CommuniVoice"
+      "package": "com.jce.communivoice"
     },
     "web": {
       "favicon": "./assets/favicon.png"

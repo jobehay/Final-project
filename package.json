@@ -1,6 +1,6 @@
 {
   "name": "communivoice",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@react-native-community/masked-view": "^0.1.11",
-    "@react-native-firebase/storage": "^20.1.0",
     "@react-navigation/native": "^6.1.12",
     "@react-navigation/stack": "^6.3.23",
     "@types/react": "~18.2.79",
