@@ -26,3 +26,12 @@ ANDROID_REACT_APP_FIREBASE_APP_ID=<YOUR_ANDROID_APP_ID>
 3. Replace <YOUR_API_KEY> with your actual Firebase API key.
 4. Save the .env.local file.
 
+
+
+## How to build and push into EXPO.DEV
+1. eas login --> email, and password
+2. eas build:configure
+3. eas build -p android --profile production
+4. GOTO https://expo.dev/accounts/ayajobeh/projects/CommuniVoice/builds
+5. Don't forget to adjust the version inside package.json 
+6. Maybe you need to adjsut eas.json
