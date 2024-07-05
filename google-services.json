@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "695467005535",
+    "firebase_url": "https://communivoice-bea29-default-rtdb.firebaseio.com",
+    "project_id": "communivoice-bea29",
+    "storage_bucket": "communivoice-bea29.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:695467005535:android:a7a516723c70e7c3d86dea",
+        "android_client_info": {
+          "package_name": "com.jce.communivoice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJE21wU5BnWNPjbVm-BRT52M-cOeZgZ2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
