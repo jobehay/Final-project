@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  ViewStyle,
-  ActivityIndicator,
-} from "react-native";
+import { View, StyleSheet, Text, ViewStyle } from "react-native";
 import Button from "../Atom/Button/Button";
 import { initReactI18next } from "react-i18next";
 import { useTranslation } from "react-i18next";

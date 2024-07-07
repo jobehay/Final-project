@@ -26,6 +26,8 @@ import { MyCollections } from "../../Services/Firebase/collectionNames";
 import AddItemModal from "./AddItemModal";
 import { useNavigation } from "@react-navigation/native";
 import { getCurrentUserOrCreateUser } from "../../Services/Firebase/User/UserServices";
+import { getNameByLang } from "../../Services/Firebase/Image/ImageServices";
+import { useTranslation } from "react-i18next";
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
@@ -36,6 +38,10 @@ const CategoryManager = () => {
   const [newItemName, setNewItemName] = useState("");
   const [editingCategoryNames, setEditingCategoryNames] = useState({});
   const [loading, setLoading] = useState(true);
+
+  const {
+    i18n: { language },
+  } = useTranslation();
 
   const [userDetails, setUserDetails] = useState(null);
   useEffect(() => {
@@ -84,13 +90,11 @@ const CategoryManager = () => {
                   item.categoryId === category.id &&
                   item.deviceID === userDetails?.deviceID
               )
-              .map((item: any) => {
-                console.log("xxxxxxx", item);
-                return {
-                  ...item,
-                  src: { uri: item.image }, // Ensure the image source is set correctly
-                };
-              }),
+              .map((item: any) => ({
+                ...item,
+                name: getNameByLang(item, language),
+                src: { uri: item.image }, // Ensure the image source is set correctly
+              })),
             editing: false,
           }))
           .sort((a, b) => {

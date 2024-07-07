@@ -61,6 +61,9 @@ const createCommonData = async () => {
           isStar: itemCommon.isStar || false,
           deviceID: defaultUser?.deviceID,
           isCommon: true,
+          name_ar: itemCommon.name_ar,
+          name_en: itemCommon.name_en,
+          name_he: itemCommon.name_he,
           deviceIdAndCategoryId: `${defaultUser?.deviceID}${newCategoryCommonId}`,
         });
     });
