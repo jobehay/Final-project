@@ -15,6 +15,7 @@ import {
 import { COLORS } from "../../AppStyles";
 import { pickImageAndUpload } from "../../Services/Firebase/Image/ImageServices";
 import { uploadImage } from "../../Services/Firebase/firebaseAPI";
+import { useTranslation } from "react-i18next";
 
 const AddItemModal = ({
   visible,
@@ -26,6 +27,7 @@ const AddItemModal = ({
   const [imagePath, setImagePath] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (visible) {
@@ -46,7 +48,7 @@ const AddItemModal = ({
 
   const handleAddItem = async () => {
     if (!newItemName || !imagePath) {
-      setErrorMessage("Item image and name are required");
+      setErrorMessage(t("itemImageNameRequired"));
       return;
     }
 
@@ -64,7 +66,7 @@ const AddItemModal = ({
       setErrorMessage(""); // Clear error message after successful addition
       onClose(); // Close the modal after adding the item
     } catch (error) {
-      setErrorMessage("Failed to add item. Please try again.");
+      setErrorMessage(t("failedToAddItem"));
       console.error(error);
     } finally {
       setLoading(false);
@@ -95,7 +97,7 @@ const AddItemModal = ({
             style={styles.input}
             value={newItemName}
             onChangeText={setNewItemName}
-            placeholder="New item name"
+            placeholder={t("newItemName")}
           />
           {errorMessage ? (
             <Text style={styles.errorText}>{errorMessage}</Text>
@@ -108,13 +110,13 @@ const AddItemModal = ({
                 onPress={handleAddItem}
                 style={[styles.modalButton, styles.addButton]}
               >
-                <Text style={styles.buttonText}>Add Item</Text>
+                <Text style={styles.buttonText}>{t("addItem")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={onClose}
                 style={[styles.modalButton, styles.cancelButton]}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.buttonText}>{t("cancel")}</Text>
               </TouchableOpacity>
             </>
           )}

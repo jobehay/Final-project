@@ -3,9 +3,21 @@
   "general.back": "عودة",
   "screen.settings.languages": "اللغة",
   "password": "أدخل الرقم 5 خمس مرات للدخول إلى صفحة الإعدادات",
+  "password2": " أدخل الرقم 5 خمس مرات للدخول إلى صفحة المكتبه",
   "submit": "يُقدِّم",
   "cancel": "إلغاء",
   "reset": "اعادة ضبط",
   "speak": "تكلم",
-  "enterPassword": "ادحل الرقم السري"
+  "enterPassword": "ادحل الرقم السري",
+  "starredItems": " العناصر المميزة بنجمة ",
+  "newCategoryName": "اسم الفئة الجديد",
+  "addCategory": "إضافة فئة",
+  "confirmDeletion": "تأكيد الحذف",
+  "deleteCategory": "هل أنت متأكد أنك تريد حذف هذه الفئة؟",
+  "deleteItem": "هل أنت متأكد أنك تريد حذف هذا العنصر؟",
+  "newItemName": "اسم العنصر الجديد",
+  "addItem": "إضافة عنصر",
+  "itemImageNameRequired": "صورة العنصر والاسم مطلوبان",
+  "failedToAddItem": "فشل في إضافة العنصر. حاول مرة أخرى.",
+  "delete": "مسح"
 }

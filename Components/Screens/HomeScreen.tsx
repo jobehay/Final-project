@@ -18,9 +18,20 @@ const HomeScreen = ({ navigation }) => {
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [passcode, setPasscode] = useState("");
-  const correctPasscode = "55555"; // The correct passcode is five asterisks
+  const [targetScreen, setTargetScreen] = useState(null);
+  const [passcodePrompt, setPasscodePrompt] = useState(""); // New state to track the passcode prompt
+
+  const correctPasscode = "55555";
+
+  const handleLibraryPress = () => {
+    setTargetScreen(SCREENS.MENU);
+    setPasscodePrompt(t("password2")); // Set the passcode prompt for library
+    setModalVisible(true);
+  };
 
   const handleSettingsPress = () => {
+    setTargetScreen(SCREENS.SETTINGS);
+    setPasscodePrompt(t("password")); // Set the passcode prompt for settings
     setModalVisible(true);
   };
 
@@ -28,7 +39,7 @@ const HomeScreen = ({ navigation }) => {
     if (passcode === correctPasscode) {
       setPasscode("");
       setModalVisible(false);
-      navigation.navigate(SCREENS.SETTINGS);
+      navigation.navigate(targetScreen);
     } else {
       alert("Incorrect passcode");
     }
@@ -42,7 +53,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate(SCREENS.MENU)}>
+        <TouchableOpacity onPress={handleLibraryPress}>
           <Icon
             name={ICONS_NAMES.libraryIcon}
             size={iconSize}
@@ -66,7 +77,7 @@ const HomeScreen = ({ navigation }) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t("password")}</Text>
+            <Text style={styles.modalTitle}>{passcodePrompt}</Text>
             <TextInput
               style={styles.input}
               value={passcode}

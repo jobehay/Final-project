@@ -3,9 +3,21 @@
   "general.back": "Back",
   "screen.settings.languages": "Language",
   "password": "Enter the number 5 five times to enter the settings page",
+  "password2": " Enter the number 5 five times to enter the library page",
   "submit": "submit",
   "cancel": "cancel",
   "reset": "reset",
   "speak": "speak",
-  "enterPassword": "Enter Passcode"
+  "enterPassword": "Enter Passcode",
+  "starredItems": " starred Items ",
+  "newCategoryName": "New category name",
+  "addCategory": "Add Category",
+  "confirmDeletion": "Confirm Deletion",
+  "deleteCategory": "Are you sure you want to delete this category?",
+  "deleteItem": "Are you sure you want to delete this item?",
+  "newItemName": "New item name",
+  "addItem": "Add Item",
+  "itemImageNameRequired": "Item image and name are required",
+  "failedToAddItem": "Failed to add item. Please try again.",
+  "delete": "delete"
 }

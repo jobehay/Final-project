@@ -2,10 +2,24 @@
   "screen.settings.title": "הגדרות",
   "general.back": "חזרה",
   "screen.settings.languages": "השפה",
-  "password": "הזן את המספר 5 חמש פעמים כדי להיכנס לדף ההגדרות",
+  "password": "הזן את המספר 5 חמש פעמים כדי להיכנס לדף  ההגדרות",
+
+  "password2": "הזן את המספר 5 חמש פעמים כדי להיכנס לדף הספריה",
   "submit": "שלח",
   "cancel": "ביטול",
   "reset": "החזר",
   "speak": "תדבר",
-  "enterPassword": "קוד סודי"
+  "enterPassword": "קוד סודי",
+  "starredItems": "פריטים עם כוכב",
+  "newCategoryName": "שם קטגוריה חדש",
+  "addCategory": "הוסף קטגוריה",
+  "confirmDeletion": "אישור מחיקה",
+  "deleteCategory": "האם אתה בטוח שברצונך למחוק קטגוריה זו?",
+  "deleteItem": "האם אתה בטוח שברצונך למחוק פריט זה?",
+
+  "newItemName": "שם פריט חדש",
+  "addItem": "הוסף פריט",
+  "itemImageNameRequired": "תמונת הפריט והשם נדרשים",
+  "failedToAddItem": "נכשל בהוספת הפריט. נא לנסות שוב.",
+  "delete": "מחיקה"
 }

@@ -32,7 +32,6 @@ import { useTranslation } from "react-i18next";
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState("");
-  // const [starItems, setStarItems] = useState(null);
   const [newItemModalVisible, setNewItemModalVisible] = useState(false);
   const [newItemCategoryId, setNewItemCategoryId] = useState(null);
   const [newItemName, setNewItemName] = useState("");
@@ -40,34 +39,25 @@ const CategoryManager = () => {
   const [loading, setLoading] = useState(true);
 
   const {
+    t,
     i18n: { language },
   } = useTranslation();
+
+  const navigation = useNavigation();
 
   const [userDetails, setUserDetails] = useState(null);
   useEffect(() => {
     const fetchData = async () => {
       const currentUser = await getCurrentUserOrCreateUser();
-
       setUserDetails(currentUser);
     };
-
     fetchData();
   }, []);
 
-  // React.useEffect(() => {
-  //   const unsubscribe = readDocumentsRealTime(MyCollections.ITEMS, (items) => {
-  //     setStarItems(
-  //       items.filter(
-  //         (item) => item.isStar && item.deviceID === userDetails?.deviceID
-  //       )
-  //     );
-  //   });
-
-  //   return () => unsubscribe();
-  // }, [userDetails]);
-
   useEffect(() => {
-    setLoading(true); // Set loading to true before fetching data
+    if (!userDetails) return;
+
+    setLoading(true);
 
     const unsubscribeCategories = readDocumentsRealTime(
       MyCollections.CATEGORIES,
@@ -83,47 +73,91 @@ const CategoryManager = () => {
             id: category.id,
             name: category.name,
             isCommon: category.isCommon,
-            timestamp: category.timestamp, // שמירת timestamp עבור מיון
+            timestamp: category.timestamp,
             images: items
               .filter(
-                (item: any) =>
+                (item) =>
                   item.categoryId === category.id &&
                   item.deviceID === userDetails?.deviceID
               )
-              .map((item: any) => ({
+              .map((item) => ({
                 ...item,
                 name: getNameByLang(item, language),
-                src: { uri: item.image }, // Ensure the image source is set correctly
+                src: { uri: item.image },
               })),
             editing: false,
           }))
           .sort((a, b) => {
             if (a.isCommon && !b.isCommon) return -1;
             if (!a.isCommon && b.isCommon) return 1;
-            return (
-              (new Date(a.timestamp) as any) - (new Date(b.timestamp) as any)
-            ); // מיון לפי timestamp
+            return new Date(a.timestamp) - new Date(b.timestamp);
           });
 
-        setCategories(sortedCategories);
-        setLoading(false); // Set loading to false after data is fetched
+        const starredItems = items
+          .filter(
+            (item) => item.isStar && item.deviceID === userDetails?.deviceID
+          )
+          .map((item) => ({
+            ...item,
+            name: getNameByLang(item, language),
+            src: { uri: item.image },
+          }))
+          .sort(
+            (a, b) => new Date(a.position_date) - new Date(b.position_date)
+          );
+
+        const starredCategory = {
+          id: "starred",
+          name: t("starredItems"),
+          isCommon: false,
+          timestamp: new Date().toISOString(),
+          images: starredItems,
+          editing: false,
+        };
+
+        setCategories([starredCategory, ...sortedCategories]);
+        setLoading(false);
       }
     );
 
     const unsubscribeItems = readDocumentsRealTime(
       MyCollections.ITEMS,
       (itemsFromFirebase) => {
-        setCategories((prevCategories) =>
-          prevCategories.map((category) => ({
-            ...category,
-            images: itemsFromFirebase
-              .filter((item) => item.categoryId === category.id)
-              .map((item) => ({
-                ...item,
-                src: { uri: item.image },
-              })),
+        const starredItems = itemsFromFirebase
+          .filter(
+            (item) => item.isStar && item.deviceID === userDetails?.deviceID
+          )
+          .map((item) => ({
+            ...item,
+            name: getNameByLang(item, language),
+            src: { uri: item.image },
           }))
-        );
+          .sort(
+            (a, b) => new Date(a.position_date) - new Date(b.position_date)
+          );
+
+        setCategories((prevCategories) => {
+          const updatedCategories = prevCategories.map((category) => {
+            if (category.id === "starred") {
+              return { ...category, images: starredItems };
+            }
+            return {
+              ...category,
+              images: itemsFromFirebase
+                .filter((item) => item.categoryId === category.id)
+                .map((item) => ({
+                  ...item,
+                  name: getNameByLang(item, language),
+                  src: { uri: item.image },
+                })),
+            };
+          });
+
+          return [
+            updatedCategories.find((cat) => cat.id === "starred"),
+            ...updatedCategories.filter((cat) => cat.id !== "starred"),
+          ];
+        });
       }
     );
 
@@ -133,57 +167,47 @@ const CategoryManager = () => {
     };
   }, [userDetails]);
 
-  // Function to add a new, empty category
   const addCategory = async () => {
     if (newCategoryName.trim() === "") return;
 
-    // Create the new category in Firebase
     const newCategoryId = await createDocument(MyCollections.CATEGORIES, {
       name: newCategoryName,
       deviceID: userDetails?.deviceID,
-      timestamp: new Date().toISOString(), // הוספת timestamp
+      timestamp: new Date().toISOString(),
     });
 
     if (newCategoryId) {
-      // Update the local state
       const newCategory = {
         id: newCategoryId,
         name: newCategoryName,
-        images: [], // Empty array for images
+        images: [],
         editing: false,
-        timestamp: new Date().toISOString(), // הוספת timestamp
+        timestamp: new Date().toISOString(),
       };
 
-      // Always add the new category at the end
       const updatedCategories = [...categories, newCategory];
       setCategories(updatedCategories);
       setNewCategoryName("");
     }
   };
 
-  // Function to delete a category by ID
   const deleteCategory = (id) => {
-    Alert.alert(
-      "Confirm Deletion",
-      "Are you sure you want to delete this category?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert(t("confirmDeletion"), t("deleteCategory"), [
+      {
+        text: t("cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: async () => {
+          await deleteDocument(MyCollections.CATEGORIES, id);
+          setCategories(categories.filter((category) => category.id !== id));
         },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            await deleteDocument(MyCollections.CATEGORIES, id);
-            setCategories(categories.filter((category) => category.id !== id));
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
-  // Toggle editing mode for a category title
   const toggleCategoryEditing = (id) => {
     setCategories(
       categories.map((category) =>
@@ -194,11 +218,9 @@ const CategoryManager = () => {
     );
   };
 
-  // Handle category name change with debouncing
   const handleCategoryNameChange = (id, newName) => {
     setEditingCategoryNames({ ...editingCategoryNames, [id]: newName });
 
-    // Debounce the update call
     if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
 
     this.debounceTimeout = setTimeout(async () => {
@@ -210,17 +232,15 @@ const CategoryManager = () => {
             : category
         )
       );
-    }, 500); // 500ms debounce
+    }, 500);
   };
 
-  // Open modal for new item addition
   const openNewItemModal = (categoryId) => {
     setNewItemCategoryId(categoryId);
     setNewItemName("");
     setNewItemModalVisible(true);
   };
 
-  // Function to add a new item to a specific category
   const addItemToCategory = async (item) => {
     const { image, name, position_date } = item;
     const newItem = {
@@ -252,71 +272,47 @@ const CategoryManager = () => {
     setNewItemModalVisible(false);
   };
 
-  // Toggle editing mode for an image within a category
-  const toggleImageEditing = (categoryId, index) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === categoryId
-          ? {
-              ...category,
-              images: category.images.map((img, i) =>
-                i === index ? { ...img, editing: !img.editing } : img
-              ),
-            }
-          : category
-      )
-    );
-  };
-
-  // Update the name of a specific image in a category
-  const updateImageName = (categoryId, index, newName) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === categoryId
-          ? {
-              ...category,
-              images: category.images.map((img, i) =>
-                i === index ? { ...img, name: newName, editing: false } : img
-              ),
-            }
-          : category
-      )
-    );
-  };
-
-  // Delete a specific image from a category
   const deleteItem = async (categoryId, index, item) => {
-    Alert.alert(
-      "Confirm Deletion",
-      "Are you sure you want to delete this item?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert(t("confirmDeletion"), t("deleteItem"), [
+      {
+        text: t("cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: async () => {
+          await deleteDocument(MyCollections.ITEMS, item.id);
+          await deleteImage(item.src.uri);
+          setCategories(
+            categories.map((category) =>
+              category.id === categoryId
+                ? {
+                    ...category,
+                    images: category.images.filter((_, i) => i !== index),
+                  }
+                : category
+            )
+          );
+
+          if (item.isStar) {
+            setCategories((prevCategories) => {
+              return prevCategories.map((category) => {
+                if (category.id === "starred") {
+                  return {
+                    ...category,
+                    images: category.images.filter((img) => img.id !== item.id),
+                  };
+                }
+                return category;
+              });
+            });
+          }
         },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            await deleteDocument(MyCollections.ITEMS, item.id);
-            await deleteImage(item.src.uri);
-            setCategories(
-              categories.map((category) =>
-                category.id === categoryId
-                  ? {
-                      ...category,
-                      images: category.images.filter((_, i) => i !== index),
-                    }
-                  : category
-              )
-            );
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
-  // Toggle star status for an image within a category
   const toggleStar = async (categoryId, index, item) => {
     const updatedItem = { ...item, isStar: !item.isStar };
     const currentDate = new Date();
@@ -325,20 +321,29 @@ const CategoryManager = () => {
       position_date: currentDate,
     });
 
-    console.log("starItems", currentDate);
-
-    setCategories(
-      categories.map((category) =>
-        category.id === categoryId
-          ? {
-              ...category,
-              images: category.images.map((img, i) =>
-                i === index ? updatedItem : img
-              ),
+    setCategories((prevCategories) => {
+      const newCategories = prevCategories.map((category) => {
+        if (category.id === "starred") {
+          if (updatedItem.isStar) {
+            if (!category.images.find((img) => img.id === updatedItem.id)) {
+              return {
+                ...category,
+                images: [...category.images, updatedItem],
+              };
             }
-          : category
-      )
-    );
+          } else {
+            return {
+              ...category,
+              images: category.images.filter(
+                (img) => img.id !== updatedItem.id
+              ),
+            };
+          }
+        }
+        return category;
+      });
+      return newCategories;
+    });
   };
 
   return (
@@ -353,122 +358,118 @@ const CategoryManager = () => {
       )}
       <FlatList
         data={categories}
-        keyExtractor={(item) => item.id}
-        ItemSeparatorComponent={() => <View style={styles.separator} />} // Add separator here
+        keyExtractor={(item) => item?.id || Math.random().toString()}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={
-          <View style={styles.addCategoryContainer}>
+          <View style={styles.headerContainer}>
             <TextInput
               style={styles.newCategoryInput}
               value={newCategoryName}
               onChangeText={setNewCategoryName}
-              placeholder="New category name"
+              placeholder={t("newCategoryName")}
             />
             <TouchableOpacity
               onPress={addCategory}
               style={styles.addCategoryButton}
             >
-              <Text style={styles.buttonText}>Add Category</Text>
+              <Text style={styles.buttonText}>{t("addCategory")}</Text>
             </TouchableOpacity>
           </View>
         }
-        renderItem={({ item }) => (
-          <View style={styles.categoryContainer}>
-            <View style={styles.categoryTitleContainer}>
-              {item.editing ? (
-                <TextInput
-                  style={styles.categoryTitleInput}
-                  value={editingCategoryNames[item.id] || item.name}
-                  onChangeText={(newName) =>
-                    handleCategoryNameChange(item.id, newName)
-                  }
-                />
-              ) : (
-                <Text style={styles.categoryTitle}>{item.name}</Text>
-              )}
-              {!item.isCommon && (
-                <>
+        renderItem={({ item }) =>
+          item ? (
+            <View
+              style={[
+                styles.categoryContainer,
+                item.id === "starred" && styles.starredCategoryContainer,
+              ]}
+            >
+              <View style={styles.categoryTitleContainer}>
+                {item.editing ? (
+                  <TextInput
+                    style={styles.categoryTitleInput}
+                    value={editingCategoryNames[item.id] || item.name}
+                    onChangeText={(newName) =>
+                      handleCategoryNameChange(item.id, newName)
+                    }
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.categoryTitle,
+                      item.id === "starred" && styles.starredCategoryTitle,
+                    ]}
+                  >
+                    {item.name} <Icon name="star" size={20} color="gold" />
+                  </Text>
+                )}
+                {!item.isCommon && item.id !== "starred" && (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => toggleCategoryEditing(item.id)}
+                      style={styles.categoryIconButton}
+                    >
+                      <Icon name={item.editing ? "save" : "edit"} size={20} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => deleteCategory(item.id)}
+                      style={styles.categoryIconButton}
+                    >
+                      <Icon name="trash" size={20} color="red" />
+                    </TouchableOpacity>
+                  </>
+                )}
+                {!item.isCommon && item.id !== "starred" && (
                   <TouchableOpacity
-                    onPress={() => toggleCategoryEditing(item.id)}
+                    onPress={() => openNewItemModal(item.id)}
                     style={styles.categoryIconButton}
                   >
-                    <Icon name={item.editing ? "save" : "edit"} size={20} />
+                    <Icon name="plus" size={20} />
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => deleteCategory(item.id)}
-                    style={styles.categoryIconButton}
-                  >
-                    <Icon name="trash" size={20} color="red" />
-                  </TouchableOpacity>
-                </>
-              )}
-              <TouchableOpacity
-                onPress={() => openNewItemModal(item.id)}
-                style={styles.categoryIconButton}
-              >
-                <Icon name="plus" size={20} />
-              </TouchableOpacity>
-            </View>
+                )}
+              </View>
 
-            <FlatList
-              horizontal
-              data={item.images}
-              keyExtractor={(img) => img.id}
-              renderItem={({ item: img, index }) => (
-                <TouchableOpacity>
-                  <View style={styles.imageContainer}>
-                    <Image source={img.src} style={styles.image} />
-                    {img.editing ? (
-                      <TextInput
-                        style={styles.imageTextInput}
-                        value={img.name}
-                        onChangeText={(newName) =>
-                          updateImageName(item.id, index, newName)
-                        }
-                      />
-                    ) : (
+              <FlatList
+                horizontal
+                data={item.images}
+                keyExtractor={(img) => img.id}
+                renderItem={({ item: img, index }) => (
+                  <TouchableOpacity>
+                    <View style={styles.imageContainer}>
+                      <Image source={img.src} style={styles.image} />
                       <Text style={styles.imageText}>{img.name}</Text>
-                    )}
-                    <View style={styles.iconContainer}>
-                      <TouchableOpacity
-                        onPress={() => toggleImageEditing(item.id, index)}
-                      >
-                        <Icon
-                          name={img.editing ? "save" : "edit"}
-                          size={16}
-                          style={styles.editButton}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => deleteItem(item.id, index, img)}
-                      >
-                        <Icon
-                          name="trash"
-                          size={16}
-                          color="red"
-                          style={styles.deleteButton}
-                        />
-                      </TouchableOpacity>
-                      {/* Star Icon */}
-                      <TouchableOpacity
-                        onPress={() => toggleStar(item.id, index, img)}
-                      >
-                        <Icon
-                          name={img.isStar ? "star" : "star-o"}
-                          size={16}
-                          color="gold"
-                          style={styles.starButton}
-                        />
-                      </TouchableOpacity>
+                      <View style={styles.iconContainer}>
+                        {!img.isCommon && (
+                          <TouchableOpacity
+                            onPress={() => deleteItem(item.id, index, img)}
+                          >
+                            <Icon
+                              name="trash"
+                              size={16}
+                              color="red"
+                              style={styles.deleteButton}
+                            />
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          onPress={() => toggleStar(img.categoryId, index, img)}
+                        >
+                          <Icon
+                            name={img.isStar ? "star" : "star-o"}
+                            size={16}
+                            color="gold"
+                            style={styles.starButton}
+                          />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        )}
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          ) : null
+        }
       />
-
-      {/* Modal for Adding New Item */}
       <AddItemModal
         visible={newItemModalVisible}
         onClose={() => setNewItemModalVisible(false)}
@@ -490,18 +491,23 @@ const styles = StyleSheet.create({
   },
   loaderContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.8)", // Adjust background color to your preference
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
   },
   separator: {
     height: 1,
-    backgroundColor: "#ddd", // Change this color to your preference
-    marginVertical: 10, // Adjust the margin as needed
+    backgroundColor: "#ddd",
+    marginVertical: 10,
   },
   categoryContainer: {
     marginBottom: 20,
+  },
+  starredCategoryContainer: {
+    backgroundColor: COLORS.secondary, // שינוי צבע הרקע לקטגוריה "פריטים עם כוכב"
+    padding: 10,
+    borderRadius: 10,
   },
   categoryTitleContainer: {
     flexDirection: "row",
@@ -512,6 +518,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     flex: 1,
+  },
+  starredCategoryTitle: {
+    color: COLORS.primary,
   },
   categoryTitleInput: {
     fontSize: 18,
@@ -526,22 +535,18 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   image: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
   },
   imageText: {
     textAlign: "center",
-  },
-  imageTextInput: {
-    textAlign: "center",
-    borderBottomWidth: 1,
+    marginTop: 5,
+    width: 80,
+    overflow: "hidden",
   },
   iconContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-  },
-  editButton: {
-    marginHorizontal: 5,
   },
   deleteButton: {
     marginHorizontal: 5,
@@ -549,10 +554,10 @@ const styles = StyleSheet.create({
   starButton: {
     marginHorizontal: 5,
   },
-  addCategoryContainer: {
+  headerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20, // Adjust this value as needed
+    marginBottom: 20,
   },
   newCategoryInput: {
     flex: 1,
